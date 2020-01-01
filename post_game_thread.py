@@ -32,7 +32,7 @@ if __name__ == '__main__':
         print(f'[{datetime.now().strftime("%a, %b %d, %Y %I:%M %p")}]: Checked if game started')
         while todays_game['statusNum'] in [2,3]:
             todays_game = get_todays_game()
-            if todays_game['statusNum'] == 2 or (todays_game['period']['current'] >= 4 and todays_game['statusNum'] == 2 and todays_game['isEndOfPeriod'] and todays_game['vTeam']['score'] != todays_game['hTeam']['score']):
+            if todays_game['statusNum'] == 3 or (todays_game['period']['current'] >= 4 and todays_game['statusNum'] == 2 and todays_game['period']['isEndOfPeriod'] and todays_game['vTeam']['score'] != todays_game['hTeam']['score']):
                 team_stats_key = 'hTeam'
                 opponent_stats_key = 'vTeam'
                 if todays_game['vTeam']['triCode'] == TEAM:
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                 opponents_name = todays_game[opponent_stats_key]['triCode']
                 
                 # Grab points leader information
-                points_statline = '\n*'
+                points_statline = '\n'
                 points_leader_value = boxscore['stats'][team_stats_key]['leaders']['points']['value']
                 for index, player in enumerate(boxscore['stats'][team_stats_key]['leaders']['points']['players']):
                     if index > 0:
@@ -60,16 +60,16 @@ if __name__ == '__main__':
                 points_statline += f': {points_leader_value} PTS'
                 
                 # Grab reboundss leader information
-                rebounds_statline = '\n*'
+                rebounds_statline = '\n'
                 rebounds_leader_value = boxscore['stats'][team_stats_key]['leaders']['rebounds']['value']
                 for index, player in enumerate(boxscore['stats'][team_stats_key]['leaders']['rebounds']['players']):
                     if index > 0:
-                        assists_statline += ' /'
+                        rebounds_statline += ' /'
                     rebounds_statline += f' **{player["firstName"]} {player["lastName"]}**'
                 rebounds_statline += f': {rebounds_leader_value} REBS'
                 
                 # Grab assists leader information
-                assists_statline = '\n*'
+                assists_statline = '\n'
                 assists_leader_value = boxscore['stats'][team_stats_key]['leaders']['assists']['value']
                 for index, player in enumerate(boxscore['stats'][team_stats_key]['leaders']['assists']['players']):
                     if index > 0:
@@ -84,10 +84,12 @@ if __name__ == '__main__':
                 
                 title = f'[Post Game Thread] {TEAM_NAMES[TEAM]} {result} {TEAM_NAMES[opponents_name]} {team_score} - {opponents_score}'
                 selftext = f'* [Box Score](https://www.nba.com/games/{todays_game["gameUrlCode"]}#/boxscore)'
+                selftext += '\n\nStats Leaders'
                 selftext += points_statline
                 selftext += rebounds_statline
                 selftext += assists_statline
-                result = reddit.subreddit('testingground4bots').submit(title, selftext=selftext)#flair_id='d79dc9aa-cf0d-11e2-9b1b-12313d163d8f')
+                result = reddit.subreddit('heat').submit(title, selftext=selftext, flair_id='d79dc9aa-cf0d-11e2-9b1b-12313d163d8f')
+                #result = reddit.subreddit('testingground4bots').submit(title, selftext=selftext)
                 print(f'[{datetime.now().strftime("%a, %b %d, %Y %I:%M %p")}]: Game ended thread posted')
                 break
             

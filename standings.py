@@ -79,10 +79,10 @@ if __name__ == '__main__':
         standings_markdown = 'STANDINGS\n\n| | Team | W | L | Pct |\n|--|--|--|--|--|'
         
         for position, standing in enumerate(nba_standings, start=1):
-            team_nickname = f'{standing["teamSitesOnly"]["teamNickname"]}'
+            team_nickname = '{}'.format(standing["teamSitesOnly"]["teamNickname"])
             if standing["teamSitesOnly"]["teamTricode"] == TEAM:
-                team_nickname = f'**{standing["teamSitesOnly"]["teamNickname"]}**'
-            standing_markdown = f'\n| {position} |  {team_nickname} | {standing["win"]} | {standing["loss"]} | {standing["winPct"]}'
+                team_nickname = '**{}**'.format(standing["teamSitesOnly"]["teamNickname"])
+            standing_markdown = '\n| {} |  {} | {} | {} | {}'.format(position, team_nickname, standing["win"], standing["loss"], standing["winPct"])
             standings_markdown += standing_markdown
         
         standings_widget.mod.update(text=standings_markdown, css=css_str)
