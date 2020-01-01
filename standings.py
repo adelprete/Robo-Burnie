@@ -4,7 +4,7 @@ from settings import TEAM
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 def get_todays_standings():
-    standings = requests.get(f'http://data.nba.net/data/10s/prod/v2/current/standings_conference.json').json()
+    standings = requests.get('http://data.nba.net/data/10s/prod/v2/current/standings_conference.json').json()
     return standings['league']['standard']['conference']['east']
 
 # The css on the custom widget gets saved as a giant string
