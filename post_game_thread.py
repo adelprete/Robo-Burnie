@@ -95,8 +95,9 @@ if __name__ == '__main__':
                 selftext += points_statline
                 selftext += rebounds_statline
                 selftext += assists_statline
-                result = reddit.subreddit('heat').submit(title, selftext=selftext, flair_id='d79dc9aa-cf0d-11e2-9b1b-12313d163d8f')
-                #result = reddit.subreddit('testingground4bots').submit(title, selftext=selftext)
+                submission = reddit.subreddit('heat').submit(title, selftext=selftext, flair_id='d79dc9aa-cf0d-11e2-9b1b-12313d163d8f')
+                submission.mod.sticky()
+                #submission = reddit.subreddit('testingground4bots').submit(title, selftext=selftext)
                 thread_posted = True
                 print('[{}]: Game ended thread posted'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
                 break
