@@ -4,24 +4,31 @@ from settings import TEAM
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 def get_todays_standings():
-    standings = requests.get('http://data.nba.net/data/10s/prod/v2/current/standings_conference.json').json()
+    standings = requests.get('https://data.nba.net/data/10s/prod/v2/current/standings_conference.json').json()
     return standings['league']['standard']['conference']['east']
 
 # The css on the custom widget gets saved as a giant string
 css_str = """
 p {
-padding: 12px;
+font-family: Arial, Helvetica, sans-serif;
+padding: 14px;
 color: white;
-font-size: 10px;
+font-size: 12px;
 letter-spacing: .5px;
-background: #f3a03d;
+background: #e058aa;
 border-radius: 5px 5px 0px 0px;
 margin-bottom: 12px;
-font-family: Sans-Serif;
 }
 
-td, th{
- padding: 3px 15px;
+th {
+font-family: Arial, Helvetica, sans-serif;
+font-size:11px;
+}
+
+td{
+padding: 3px 18px;
+font-family: Arial, Helvetica, sans-serif;
+font-size:12px;
 }
 
 table tr:nth-child(1)>th{
@@ -29,26 +36,27 @@ background: #dcdcdc
 }
 
 table tr:nth-child(1)>td,table tr:nth-child(2), table tr:nth-child(3), table tr:nth-child(4), table tr:nth-child(5), table tr:nth-child(6), table tr:nth-child(7), table tr:nth-child(8) {
- background: #ffffd7
+background: #5cccfa
 }
 
 table {
-  border-collapse: collapse;
+border-collapse: collapse;
 }
-table th, table td{
-  border: .5px solid black; 
+
+table td{
+border: .5px solid black; 
 }
 table tr:first-child th {
-  border-top: 0;
+border-top: 0;
 }
 table tr td:first-child, table tr th:first-child{
-  border-left: 0;
+border-left: 0;
 }
 table tr:last-child td,table tr:last-child th {
-  border-bottom: 0;
+border-bottom: 0;
 }
 table tr td:last-child, table tr th:last-child{
-  border-right: 0;
+border-right: 0;
 }
 """
 
@@ -63,10 +71,10 @@ if __name__ == '__main__':
                      client_secret=CLIENT_SECRET_KEY,
                      password=BOT_PASSWORD,
                      user_agent='Game Bot by BobbaGanush87',
-                     username='bobbaganush87')
-                     
+                     username='Robo_Burnie')
+    
     # Find standings widget
-    widgets = reddit.subreddit('heat').widgets
+    widgets = reddit.subreddit('heatCSS').widgets
     standings_widget = None
     for widget in widgets.sidebar:
         if widget.shortName.lower() == 'standings':

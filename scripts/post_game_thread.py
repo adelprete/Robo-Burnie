@@ -1,8 +1,9 @@
 import requests
 import praw
 import time
+import random
 from datetime import datetime, timedelta
-from settings import TEAM, TEAM_NAMES
+from settings import TEAM, TEAM_INFO
 from private import BOT_PASSWORD, CLIENT_SECRET_KEY, CLIENT_ID
 
 def get_todays_game():
@@ -22,10 +23,8 @@ def get_boxscore(gameid):
     return boxscore
 
 if __name__ == '__main__':
-    thread_posted = False
-    while thread_posted == False:
+    while True:
         todays_game = get_todays_game()
-        
         if todays_game == {}:
             print('[{}]: No Game Today'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
             break
@@ -35,22 +34,24 @@ if __name__ == '__main__':
         
         if todays_game['statusNum'] == 1:
             print("[{}]: Game hasn't started yet".format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
-            time.sleep(5400)
+            time.sleep(5400) # checks again in an hour and a half
+            continue
         
         while todays_game['statusNum'] in [2,3]:
             todays_game = get_todays_game()
+            # Check if game is over
             if todays_game['statusNum'] == 3 or (todays_game['period']['current'] >= 4 and todays_game['statusNum'] == 2 and todays_game['period']['isEndOfPeriod'] and todays_game['vTeam']['score'] != todays_game['hTeam']['score']):
                 team_stats_key = 'hTeam'
                 opponent_stats_key = 'vTeam'
                 if todays_game['vTeam']['triCode'] == TEAM:
-                    team_stats_key = 'hTeam'
+                    team_stats_key = 'vTeam'
                     opponent_stats_key = 'hTeam'
                 boxscore = get_boxscore(todays_game['gameId'])
                 reddit = praw.Reddit(client_id=CLIENT_ID,
                                  client_secret=CLIENT_SECRET_KEY,
                                  password=BOT_PASSWORD,
                                  user_agent='Game Bot by BobbaGanush87',
-                                 username='bobbaganush87')
+                                 username='Robo_Burnie')
                 
                 # Grab general score information
                 team_score = todays_game[team_stats_key]['score']
@@ -85,20 +86,28 @@ if __name__ == '__main__':
                 assists_statline += ': {} ASTS'.format(assists_leader_value)
                 
                 if team_score < opponents_score:
-                    result = 'lose to'
+                    result = random.choice(['lose to', 'fall to'])
                 else:
-                    result = 'defeat'
+                    result = random.choice(['defeat', 'win against'])
                 
-                title = '[Post Game Thread] {} {} {} {} - {}'.format(TEAM_NAMES[TEAM], result, TEAM_NAMES[opponents_name], team_score, opponents_score)
+                title = '[Post Game Thread] {} {} {} {} - {}'.format(TEAM_INFO[TEAM]['full_name'], result, TEAM_INFO[opponents_name]['full_name'], team_score, opponents_score)
                 selftext = '* [Box Score](https://www.nba.com/games/{}#/boxscore)'.format(todays_game["gameUrlCode"])
                 selftext += '\n\nStat Leaders'
                 selftext += points_statline
                 selftext += rebounds_statline
                 selftext += assists_statline
-                submission = reddit.subreddit('heat').submit(title, selftext=selftext, flair_id='d79dc9aa-cf0d-11e2-9b1b-12313d163d8f')
+                
+                # Submit Post
+                submission = reddit.subreddit('heatcss').submit(title, selftext=selftext, send_replies=False, flair_id='aa3be42a-c182-11e3-b8ca-12313b0e88c2')
                 submission.mod.sticky()
-                #submission = reddit.subreddit('testingground4bots').submit(title, selftext=selftext)
-                thread_posted = True
+                
+                # Unsticky Game Thread
+                subreddit = reddit.subreddit('heatcss')
+                for post in subreddit.hot(limit=5):
+                    if post.stickied and "[Game Thread]" in post.title:
+                        post.mod.sticky(False)
+                        break
+                
                 print('[{}]: Game ended thread posted'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
                 break
             
