@@ -74,7 +74,7 @@ if __name__ == '__main__':
                      username='Robo_Burnie')
     
     # Find standings widget
-    widgets = reddit.subreddit('heatCSS').widgets
+    widgets = reddit.subreddit('heat').widgets
     standings_widget = None
     for widget in widgets.sidebar:
         if widget.shortName.lower() == 'standings':
