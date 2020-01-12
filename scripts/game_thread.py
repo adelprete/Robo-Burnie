@@ -13,7 +13,7 @@ if __name__ == '__main__':
     
     if todays_game == {}:
         print('[{}]: No Game Today'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
-    elif todays_game.get('statusNum') == 2:
+    elif todays_game.get('statusNum') == 1:
         print("[{}]: Game hasn't started yet".format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
         
         # Grab general game information
