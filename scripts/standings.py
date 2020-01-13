@@ -94,4 +94,4 @@ if __name__ == '__main__':
             standings_markdown += standing_markdown
         
         standings_widget.mod.update(text=standings_markdown, css=css_str)
-    
+        print('standings updated')    
