@@ -109,6 +109,7 @@ if __name__ == '__main__':
                         break
                 
                 print('[{}]: Game ended thread posted'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
+                quit()
                 break
             
             elif todays_game['period']['current'] >= 4 and todays_game['statusNum'] == 2 and not todays_game['clock']:
