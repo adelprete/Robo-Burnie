@@ -91,7 +91,7 @@ if __name__ == '__main__':
                          client_secret=CLIENT_SECRET_KEY,
                          password=BOT_PASSWORD,
                          user_agent='Game Bot by BobbaGanush87',
-                         username='Robo_Burnie')
+                         username='RoboBurnie')
         
         submission = reddit.subreddit('heatcss').submit(title, selftext=self_text, send_replies=False, flair_id='8a22ad40-c182-11e3-877e-12313b0d38eb')
         submission.mod.sticky()
