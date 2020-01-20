@@ -71,7 +71,7 @@ if __name__ == '__main__':
                      client_secret=CLIENT_SECRET_KEY,
                      password=BOT_PASSWORD,
                      user_agent='Game Bot by BobbaGanush87',
-                     username='Robo_Burnie')
+                     username='RoboBurnie')
     
     # Find standings widget
     widgets = reddit.subreddit('heat').widgets
