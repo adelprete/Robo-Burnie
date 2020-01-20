@@ -51,7 +51,7 @@ if __name__ == '__main__':
                                  client_secret=CLIENT_SECRET_KEY,
                                  password=BOT_PASSWORD,
                                  user_agent='Game Bot by BobbaGanush87',
-                                 username='Robo_Burnie')
+                                 username='RoboBurnie')
                 
                 # Grab general score information
                 team_score = todays_game[team_stats_key]['score']
