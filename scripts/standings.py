@@ -15,7 +15,7 @@ padding: 14px;
 color: white;
 font-size: 12px;
 letter-spacing: .5px;
-background: #e058aa;
+background: #850129;
 border-radius: 5px 5px 0px 0px;
 margin-bottom: 12px;
 }
@@ -36,7 +36,7 @@ background: #dcdcdc
 }
 
 table tr:nth-child(1)>td,table tr:nth-child(2), table tr:nth-child(3), table tr:nth-child(4), table tr:nth-child(5), table tr:nth-child(6), table tr:nth-child(7), table tr:nth-child(8) {
-background: #5cccfa
+background: #ffb000;
 }
 
 table {
