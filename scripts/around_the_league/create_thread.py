@@ -35,10 +35,10 @@ def main(action):
                 game_time = 'Final'
 
             game_details = (
-                f">{teams_map[game['vTeam']['teamId']]['fullName']:<25} {game['vTeam']['score']:>3}\n"
-                f">{teams_map[game['hTeam']['teamId']]['fullName']:<25} {game['hTeam']['score']:>3}\n"
-                f">{game_time}/n"
-                f"[Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore)\n\n"
+                f">{teams_map[game['vTeam']['teamId']]['fullName']:<25} {game['vTeam']['score']:>3}\n\n"
+                f">{teams_map[game['hTeam']['teamId']]['fullName']:<25} {game['hTeam']['score']:>3}\n\n"
+                f">{game_time}\n\n"
+                f"[Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore)\n\n\n"
             )
 
             body += game_details
