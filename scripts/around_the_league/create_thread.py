@@ -2,16 +2,16 @@ import requests
 import praw
 import sys
 from datetime import datetime
-import constants import teams_map
+from constants import teams_map
 from private import BOT_PASSWORD, CLIENT_SECRET_KEY, CLIENT_ID
 
 SUBREDDIT = 'heatcss'
 
 def get_todays_games():
     today_json = requests.get(f'https://data.nba.net/data/10s/prod/v1/today.json').json()
-    todays_date = today_json['links']['currentDate']
+    current_scoreboard_link = today_json['links']['currentScoreboard']
 
-    scoreboard = requests.get(f'https://data.nba.net/data/10s/prod/v1/{todays_date}/scoreboard.json').json()
+    scoreboard = requests.get(f'https://data.nba.net/data/10s{current_scoreboard_link}').json()
     return scoreboard['games']
 
 def main(action):
@@ -54,15 +54,15 @@ def main(action):
         subreddit = reddit.subreddit('heatcss')
 
         if action == 'create':
-            submission = reddit.subreddit(SUBREDDIT).submit(title, selftext=body, send_replies=False)
-            submission.mod.sticky()
-            submission.mod.suggested_sort('new')
-
             # Unsticky Around the League Thread (if any)
             for post in subreddit.hot(limit=10):
                 if post.stickied and "[Around the League]" in post.title:
                     post.mod.sticky(False)
                     break
+
+            submission = reddit.subreddit(SUBREDDIT).submit(title, selftext=body, send_replies=False)
+            submission.mod.sticky()
+            submission.mod.suggested_sort('new')
 
             print('[{}]: Around the League thread posted'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
         elif action == 'update':
