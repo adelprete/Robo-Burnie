@@ -21,7 +21,7 @@ def main(action):
         print('[{}]: No Games Today'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
         return
     else:
-        title = "[Around The League] Discuss today's NBA news and games"
+        title = "[Around the League] Discuss today's NBA news and games"
 
         body = ""
 
@@ -30,7 +30,10 @@ def main(action):
             # Determine the status of the game
             game_time = game['startTimeEastern']
             if game['statusNum'] == 2:
-                game_time = f"Q{game['period']} {game['clock']}"
+                if game['period']['isHalftime']:
+                    game_time = 'Halftime'
+                else:
+                    game_time = f"Q{game['period']['current']} {game['clock']}"
             elif game['statusNum'] == 3:
                 game_time = 'Final'
 
@@ -67,8 +70,9 @@ def main(action):
             print('[{}]: Around the League thread posted'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
         elif action == 'update':
             for post in subreddit.hot(limit=10):
-                if post.stickied and "[Around the League]" in post.title:
+                if post.stickied and "[Around The League]" in post.title:
                     post.edit(body)
+                    post.save()
                     break
             print('[{}]: Around the League thread updated'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
 
