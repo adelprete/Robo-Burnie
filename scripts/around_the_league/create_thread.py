@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 from constants import teams_map
 from private import BOT_PASSWORD, CLIENT_SECRET_KEY, CLIENT_ID
-
+PYTHONPATH="${PYTHONPATH}:/home/pi/RoboBurnie/Robo-Burnie"
 SUBREDDIT = 'heatcss'
 
 def get_todays_games():
@@ -39,6 +39,14 @@ def main(action):
                 f">{teams_map[game['hTeam']['teamId']]['fullName']:<25} {game['hTeam']['score']:>3}\n\n"
                 f">{game_time}\n\n"
                 f"[Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore)\n\n\n"
+            )
+
+            game_details = (
+                f"| Teams | Score |",
+                f"| {teams_map[game['vTeam']['teamId']]['fullName']} |  {game['vTeam']['score']:>3} |",
+                f"| {teams_map[game['hTeam']['teamId']]['fullName']} |  {game['hTeam']['score']:>3} |",
+                f"| {game_time} | [Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore) |",
+                f"\n\n"
             )
 
             body += game_details
