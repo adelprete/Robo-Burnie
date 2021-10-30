@@ -4,14 +4,16 @@ import sys
 from datetime import datetime
 from constants import teams_map
 from private import BOT_PASSWORD, CLIENT_SECRET_KEY, CLIENT_ID
+
 PYTHONPATH="${PYTHONPATH}:/home/pi/RoboBurnie/Robo-Burnie"
+
 SUBREDDIT = 'heatcss'
 
 def get_todays_games():
-    today_json = requests.get(f'https://data.nba.net/data/10s/prod/v1/today.json').json()
-    current_scoreboard_link = today_json['links']['currentScoreboard']
-
-    scoreboard = requests.get(f'https://data.nba.net/data/10s{current_scoreboard_link}').json()
+    #today_json = requests.get(f'https://data.nba.net/data/10s/prod/v1/today.json').json()
+    #current_scoreboard_link = today_json['links']['currentScoreboard']
+    todays_date_str = datetime.now().strftime("%Y%m%d")
+    scoreboard = requests.get(f'https://data.nba.net/data/10s/prod/v1/{todays_date_str}/scoreboard.json').json()
     return scoreboard['games']
 
 def main(action):
@@ -49,7 +51,7 @@ def main(action):
                 f"| --- | --- |\n"
                 f"| {teams_map[game['vTeam']['teamId']]['fullName']} |  {game['vTeam']['score']:>3} |\n"
                 f"| {teams_map[game['hTeam']['teamId']]['fullName']} |  {game['hTeam']['score']:>3} |\n"
-                f"| {game_time} | [Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore) |\n"
+                f"| [Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore) | {game_time} |\n"
                 f"\n--\n\n" 
             )
 
@@ -66,26 +68,33 @@ def main(action):
         subreddit = reddit.subreddit('heatcss')
 
         if action == 'create':
-            # Unsticky Around the League Thread (if any)
+            need_to_create = False
+            # Unsticky old Around the League Thread (if any)
+            todays_date = datetime.now().strftime("%Y%m%d")
             for post in subreddit.hot(limit=10):
                 if post.stickied and "[Around the League]" in post.title:
-                    post.mod.sticky(False)
+                    post_date = datetime.fromtimestamp(post.created_utc).strftime("%Y%m%d")
+                    if post_date != todays_date:
+                        need_to_create = True
+                        post.mod.sticky(False)
                     break
 
-            submission = reddit.subreddit(SUBREDDIT).submit(title, selftext=body, send_replies=False)
-            submission.mod.sticky()
-            submission.mod.suggested_sort('new')
+            # Submit the post if one doesnt already exist for the day
+            if need_to_create:
+                submission = reddit.subreddit(SUBREDDIT).submit(title, selftext=body, send_replies=False)
+                submission.mod.sticky()
+                submission.mod.suggested_sort('new')
+                print('[{}]: Around the League thread posted'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
+            else:
+                print('[{}]: Around the League thread already created'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
 
-            print('[{}]: Around the League thread posted'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
         elif action == 'update':
             for post in subreddit.hot(limit=10):
-                if post.stickied and "[Around The League]" in post.title:
+                if post.stickied and "[Around the League]" in post.title:
                     post.edit(body)
                     post.save()
                     break
-            print('[{}]: Around the League thread updated'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
-
-        
+            print('[{}]: Around the League thread updated'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p"))) 
 
 
 if __name__ == '__main__':
