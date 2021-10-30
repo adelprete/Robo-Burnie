@@ -7,7 +7,7 @@ from private import BOT_PASSWORD, CLIENT_SECRET_KEY, CLIENT_ID
 
 PYTHONPATH="${PYTHONPATH}:/home/pi/RoboBurnie/Robo-Burnie"
 
-SUBREDDIT = 'heatcss'
+SUBREDDIT = 'heat'
 
 def get_todays_games():
     #today_json = requests.get(f'https://data.nba.net/data/10s/prod/v1/today.json').json()
@@ -25,8 +25,10 @@ def main(action):
     else:
         title = "[Around the League] Discuss today's NBA news and games"
 
-        body = ""
-
+        body = (
+            f"| **Visitors** | **Home** | **Score** | **Time** | **Box Score** |\n"
+            f"| :---: | :---: | :---: | :---: | :---: |\n"
+        )
         for game in todays_games:
 
             # Determine the status of the game
@@ -38,14 +40,14 @@ def main(action):
                     game_time = f"Q{game['period']['current']} {game['clock']}"
             elif game['statusNum'] == 3:
                 game_time = 'Final'
-            """
+            
+            score = f"{game['vTeam']['score']:>3} - {game['hTeam']['score']:<3}"
+            box_score = f"[Link](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore)"
+            
             game_details = (
-                f">{teams_map[game['vTeam']['teamId']]['fullName']:<25} {game['vTeam']['score']:>3}\n\n"
-                f">{teams_map[game['hTeam']['teamId']]['fullName']:<25} {game['hTeam']['score']:>3}\n\n"
-                f">{game_time}\n\n"
-                f"[Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore)\n\n\n"
-            )"""
-
+                f"| {teams_map[game['vTeam']['teamId']]['nickname']} | {teams_map[game['hTeam']['teamId']]['nickname']} | {score} | {game_time} | {box_score} |\n"
+            )
+            """
             game_details = (
                 f"| Teams | Score |\n"
                 f"| --- | --- |\n"
@@ -53,7 +55,7 @@ def main(action):
                 f"| {teams_map[game['hTeam']['teamId']]['fullName']} |  {game['hTeam']['score']:>3} |\n"
                 f"| [Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore) | {game_time} |\n"
                 f"\n--\n\n" 
-            )
+            )"""
 
             body += game_details
 
@@ -81,7 +83,7 @@ def main(action):
 
             # Submit the post if one doesnt already exist for the day
             if need_to_create:
-                submission = reddit.subreddit(SUBREDDIT).submit(title, selftext=body, send_replies=False)
+                submission = reddit.subreddit(SUBREDDIT).submit(title, selftext=body, send_replies=False, flair_id='29f18426-a10b-11e6-af2b-0ea571864a50')
                 submission.mod.sticky()
                 submission.mod.suggested_sort('new')
                 print('[{}]: Around the League thread posted'.format(datetime.now().strftime("%a, %b %d, %Y %I:%M %p")))
