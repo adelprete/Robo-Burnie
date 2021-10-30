@@ -36,20 +36,21 @@ def main(action):
                     game_time = f"Q{game['period']['current']} {game['clock']}"
             elif game['statusNum'] == 3:
                 game_time = 'Final'
-
+            """
             game_details = (
                 f">{teams_map[game['vTeam']['teamId']]['fullName']:<25} {game['vTeam']['score']:>3}\n\n"
                 f">{teams_map[game['hTeam']['teamId']]['fullName']:<25} {game['hTeam']['score']:>3}\n\n"
                 f">{game_time}\n\n"
                 f"[Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore)\n\n\n"
-            )
+            )"""
 
             game_details = (
-                f"| Teams | Score |",
-                f"| {teams_map[game['vTeam']['teamId']]['fullName']} |  {game['vTeam']['score']:>3} |",
-                f"| {teams_map[game['hTeam']['teamId']]['fullName']} |  {game['hTeam']['score']:>3} |",
-                f"| {game_time} | [Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore) |",
-                f"\n\n"
+                f"| Teams | Score |\n"
+                f"| --- | --- |\n"
+                f"| {teams_map[game['vTeam']['teamId']]['fullName']} |  {game['vTeam']['score']:>3} |\n"
+                f"| {teams_map[game['hTeam']['teamId']]['fullName']} |  {game['hTeam']['score']:>3} |\n"
+                f"| {game_time} | [Box-Score](https://www.nba.com/games/{game['gameUrlCode']}#/boxscore) |\n"
+                f"\n--\n\n" 
             )
 
             body += game_details
