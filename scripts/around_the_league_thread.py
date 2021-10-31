@@ -67,7 +67,7 @@ def main(action):
                             user_agent='Game Bot by BobbaGanush87',
                             username='RoboBurnie')
                             
-        subreddit = reddit.subreddit('heatcss')
+        subreddit = reddit.subreddit(SUBREDDIT)
 
         if action == 'create':
             need_to_create = False
