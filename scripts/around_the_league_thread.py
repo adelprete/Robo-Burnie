@@ -80,6 +80,8 @@ def main(action):
                         need_to_create = True
                         post.mod.sticky(False)
                     break
+            else:
+                need_to_create = True
 
             # Submit the post if one doesnt already exist for the day
             if need_to_create:
