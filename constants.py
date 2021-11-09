@@ -1,4 +1,38 @@
-teams_map = {
+TEAM_TRI_TO_INFO = {
+    "ATL": {"full_name": "Atlanta Hawks", "reddit": "/r/AtlantaHawks"},
+    "BOS": {"full_name": "Boston Celtics", "reddit": "/r/BostonCeltics"},
+    "BKN": {"full_name": "Brooklyn Nets", "reddit": "/r/gonets"},
+    "CHA": {"full_name": "Charlotte Bobcats", "reddit": "/r/CharlotteHornets"},
+    "CHI": {"full_name": "Chicago Bulls", "reddit": "/r/ChicagoBulls"},
+    "CLE": {"full_name": "Cleveland Cavaliers", "reddit": "/r/ClevelandCavs"},
+    "DAL": {"full_name": "Dallas Mavericks", "reddit": "/r/mavericks"},
+    "DEN": {"full_name": "Denver Nuggets", "reddit": "/r/DenverNuggets"},
+    "DET": {"full_name": "Detroit Pistons", "reddit": "/r/DetroitPistons"},
+    "GSW": {"full_name": "Golden State Warriors", "reddit": "/r/warriors"},
+    "HOU": {"full_name": "Houston Rockets", "reddit": "/r/rockets"},
+    "IND": {"full_name": "Indiana Pacers", "reddit": "/r/Pacers"},
+    "LAC": {"full_name": "Los Angeles Clippers", "reddit": "/r/laclippers"},
+    "LAL": {"full_name": "Los Angeles Lakers", "reddit": "/r/lakers"},
+    "MEM": {"full_name": "Memphis Grizzlies", "reddit": "/r/memphisgrizzlies"},
+    "MIA": {"full_name": "Miami Heat", "reddit": "/r/heat"},
+    "MIL": {"full_name": "Milwaukee Bucks", "reddit": "/r/MkeBucks"},
+    "MIN": {"full_name": "Minnesota Timberwolves", "reddit": "/r/timberwolves"},
+    "NOP": {"full_name": "New Orleans Pelicans", "reddit": "/r/nolapelicans"},
+    "NYK": {"full_name": "New York Knicks", "reddit": "/r/nyknicks"},
+    "OKC": {"full_name": "Oklahoma City Thunder", "reddit": "/r/thunder"},
+    "ORL": {"full_name": "Orlando Magic", "reddit": "/r/OrlandoMagic"},
+    "PHI": {"full_name": "Philadelphia 76ers", "reddit": "/r/sixers"},
+    "PHX": {"full_name": "Phoenix Suns", "reddit": "/r/suns"},
+    "POR": {"full_name": "Portland Timbers", "reddit": "/r/ripcity"},
+    "SAC": {"full_name": "Sacramento Kings", "reddit": "/r/kings"},
+    "SAS": {"full_name": "San Antonio Spurs", "reddit": "/r/nbaspurs"},
+    "TOR": {"full_name": "Toronto Raptors", "reddit": "/r/TorontoRaptors"},
+    "UTA": {"full_name": "Utah Jazz", "reddit": "/r/utahjazz"},
+    "WAS": {"full_name": "Washington Wizards", "reddit": "/r/WashingtonWizards"},
+}
+
+
+TEAM_ID_TO_INFO = {
     "1610612737": {
         "city": "Atlanta",
         "fullName": "Atlanta Hawks",
@@ -11,7 +45,7 @@ teams_map = {
         "nickname": "Hawks",
         "urlName": "hawks",
         "teamId": "1610612737",
-        "altCityName": "Atlanta"
+        "altCityName": "Atlanta",
     },
     "1610612738": {
         "nickname": "Celtics",
@@ -25,7 +59,7 @@ teams_map = {
         "isNBAFranchise": True,
         "confName": "East",
         "fullName": "Boston Celtics",
-        "city": "Boston"
+        "city": "Boston",
     },
     "1610612751": {
         "altCityName": "Brooklyn",
@@ -39,7 +73,7 @@ teams_map = {
         "confName": "East",
         "isNBAFranchise": True,
         "fullName": "Brooklyn Nets",
-        "city": "Brooklyn"
+        "city": "Brooklyn",
     },
     "1610612766": {
         "nickname": "Hornets",
@@ -53,7 +87,7 @@ teams_map = {
         "isNBAFranchise": True,
         "confName": "East",
         "fullName": "Charlotte Hornets",
-        "city": "Charlotte"
+        "city": "Charlotte",
     },
     "1610612741": {
         "altCityName": "Chicago",
@@ -67,7 +101,7 @@ teams_map = {
         "confName": "East",
         "isNBAFranchise": True,
         "fullName": "Chicago Bulls",
-        "city": "Chicago"
+        "city": "Chicago",
     },
     "1610612739": {
         "urlName": "cavaliers",
@@ -81,7 +115,7 @@ teams_map = {
         "isNBAFranchise": True,
         "confName": "East",
         "fullName": "Cleveland Cavaliers",
-        "city": "Cleveland"
+        "city": "Cleveland",
     },
     "1610612742": {
         "isNBAFranchise": True,
@@ -95,7 +129,7 @@ teams_map = {
         "tricode": "DAL",
         "teamShortName": "Dallas",
         "divName": "Southwest",
-        "isAllStar": False
+        "isAllStar": False,
     },
     "1610612743": {
         "divName": "Northwest",
@@ -109,7 +143,7 @@ teams_map = {
         "city": "Denver",
         "fullName": "Denver Nuggets",
         "confName": "West",
-        "isNBAFranchise": True
+        "isNBAFranchise": True,
     },
     "1610612765": {
         "divName": "Central",
@@ -123,7 +157,7 @@ teams_map = {
         "fullName": "Detroit Pistons",
         "city": "Detroit",
         "confName": "East",
-        "isNBAFranchise": True
+        "isNBAFranchise": True,
     },
     "1610612744": {
         "teamShortName": "Golden State",
@@ -137,7 +171,7 @@ teams_map = {
         "fullName": "Golden State Warriors",
         "city": "Golden State",
         "isNBAFranchise": True,
-        "confName": "West"
+        "confName": "West",
     },
     "1610612745": {
         "nickname": "Rockets",
@@ -151,7 +185,7 @@ teams_map = {
         "isNBAFranchise": True,
         "confName": "West",
         "fullName": "Houston Rockets",
-        "city": "Houston"
+        "city": "Houston",
     },
     "1610612754": {
         "fullName": "Indiana Pacers",
@@ -165,7 +199,7 @@ teams_map = {
         "nickname": "Pacers",
         "urlName": "pacers",
         "teamId": "1610612754",
-        "altCityName": "Indiana"
+        "altCityName": "Indiana",
     },
     "1610612746": {
         "urlName": "clippers",
@@ -179,7 +213,7 @@ teams_map = {
         "isNBAFranchise": True,
         "confName": "West",
         "fullName": "LA Clippers",
-        "city": "LA"
+        "city": "LA",
     },
     "1610612747": {
         "isAllStar": False,
@@ -193,7 +227,7 @@ teams_map = {
         "city": "Los Angeles",
         "fullName": "Los Angeles Lakers",
         "confName": "West",
-        "isNBAFranchise": True
+        "isNBAFranchise": True,
     },
     "1610612763": {
         "urlName": "grizzlies",
@@ -207,7 +241,7 @@ teams_map = {
         "isNBAFranchise": True,
         "confName": "West",
         "city": "Memphis",
-        "fullName": "Memphis Grizzlies"
+        "fullName": "Memphis Grizzlies",
     },
     "1610612748": {
         "nickname": "Heat",
@@ -221,7 +255,7 @@ teams_map = {
         "isNBAFranchise": True,
         "confName": "East",
         "city": "Miami",
-        "fullName": "Miami Heat"
+        "fullName": "Miami Heat",
     },
     "1610612749": {
         "teamShortName": "Milwaukee",
@@ -235,7 +269,7 @@ teams_map = {
         "fullName": "Milwaukee Bucks",
         "city": "Milwaukee",
         "isNBAFranchise": True,
-        "confName": "East"
+        "confName": "East",
     },
     "1610612750": {
         "tricode": "MIN",
@@ -249,7 +283,7 @@ teams_map = {
         "fullName": "Minnesota Timberwolves",
         "city": "Minnesota",
         "isNBAFranchise": True,
-        "confName": "West"
+        "confName": "West",
     },
     "1610612740": {
         "fullName": "New Orleans Pelicans",
@@ -263,7 +297,7 @@ teams_map = {
         "altCityName": "New Orleans",
         "teamId": "1610612740",
         "urlName": "pelicans",
-        "nickname": "Pelicans"
+        "nickname": "Pelicans",
     },
     "1610612752": {
         "fullName": "New York Knicks",
@@ -277,7 +311,7 @@ teams_map = {
         "nickname": "Knicks",
         "urlName": "knicks",
         "teamId": "1610612752",
-        "altCityName": "New York"
+        "altCityName": "New York",
     },
     "1610612760": {
         "fullName": "Oklahoma City Thunder",
@@ -291,7 +325,7 @@ teams_map = {
         "altCityName": "Oklahoma City",
         "teamId": "1610612760",
         "urlName": "thunder",
-        "nickname": "Thunder"
+        "nickname": "Thunder",
     },
     "1610612753": {
         "isNBAFranchise": True,
@@ -305,7 +339,7 @@ teams_map = {
         "tricode": "ORL",
         "teamShortName": "Orlando",
         "divName": "Southeast",
-        "isAllStar": False
+        "isAllStar": False,
     },
     "1610612755": {
         "nickname": "76ers",
@@ -319,7 +353,7 @@ teams_map = {
         "isNBAFranchise": True,
         "confName": "East",
         "fullName": "Philadelphia 76ers",
-        "city": "Philadelphia"
+        "city": "Philadelphia",
     },
     "1610612756": {
         "city": "Phoenix",
@@ -333,7 +367,7 @@ teams_map = {
         "altCityName": "Phoenix",
         "teamId": "1610612756",
         "urlName": "suns",
-        "nickname": "Suns"
+        "nickname": "Suns",
     },
     "1610612757": {
         "fullName": "Portland Trail Blazers",
@@ -347,7 +381,7 @@ teams_map = {
         "teamId": "1610612757",
         "altCityName": "Portland",
         "nickname": "Trail Blazers",
-        "urlName": "blazers"
+        "urlName": "blazers",
     },
     "1610612758": {
         "teamId": "1610612758",
@@ -361,7 +395,7 @@ teams_map = {
         "confName": "West",
         "isNBAFranchise": True,
         "city": "Sacramento",
-        "fullName": "Sacramento Kings"
+        "fullName": "Sacramento Kings",
     },
     "1610612759": {
         "fullName": "San Antonio Spurs",
@@ -375,7 +409,7 @@ teams_map = {
         "teamId": "1610612759",
         "altCityName": "San Antonio",
         "nickname": "Spurs",
-        "urlName": "spurs"
+        "urlName": "spurs",
     },
     "1610616833": {
         "isNBAFranchise": False,
@@ -389,7 +423,7 @@ teams_map = {
         "teamShortName": "Team Durant",
         "tricode": "DRT",
         "isAllStar": True,
-        "divName": "East"
+        "divName": "East",
     },
     "1610616834": {
         "teamId": "1610616834",
@@ -403,7 +437,7 @@ teams_map = {
         "confName": "West",
         "isNBAFranchise": False,
         "fullName": "Team LeBron",
-        "city": "Team"
+        "city": "Team",
     },
     "1610612761": {
         "isNBAFranchise": True,
@@ -417,7 +451,7 @@ teams_map = {
         "tricode": "TOR",
         "teamShortName": "Toronto",
         "divName": "Atlantic",
-        "isAllStar": False
+        "isAllStar": False,
     },
     "1610612762": {
         "fullName": "Utah Jazz",
@@ -431,7 +465,7 @@ teams_map = {
         "teamId": "1610612762",
         "altCityName": "Utah",
         "nickname": "Jazz",
-        "urlName": "jazz"
+        "urlName": "jazz",
     },
     "1810612762": {
         "fullName": "Utah Blue",
@@ -445,7 +479,7 @@ teams_map = {
         "teamId": "1810612762",
         "altCityName": "Utah",
         "nickname": "Jazz",
-        "urlName": "utah_blue"
+        "urlName": "utah_blue",
     },
     "1710612762": {
         "fullName": "Utah White",
@@ -459,7 +493,7 @@ teams_map = {
         "teamId": "1710612762",
         "altCityName": "Utah",
         "nickname": "Jazz",
-        "urlName": "utah_white"
+        "urlName": "utah_white",
     },
     "1610612764": {
         "fullName": "Washington Wizards",
@@ -473,6 +507,6 @@ teams_map = {
         "teamId": "1610612764",
         "altCityName": "Washington",
         "nickname": "Wizards",
-        "urlName": "wizards"
-    }
+        "urlName": "wizards",
+    },
 }

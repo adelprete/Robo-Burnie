@@ -1,11 +1,8 @@
-import requests
 import praw
-from settings import TEAM
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
-def get_todays_standings():
-    standings = requests.get('https://data.nba.net/data/10s/prod/v2/current/standings_conference.json').json()
-    return standings['league']['standard']['conference']['east']
+from scripts import helpers
+from settings import TEAM
 
 # The css on the custom widget gets saved as a giant string
 css_str = """
@@ -61,37 +58,47 @@ border-right: 0;
 """
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """
     This script will update the standings on the Miami Heat 'new' reddit.
     """
-    
+
     # Connect to Reddit
-    reddit = praw.Reddit(client_id=CLIENT_ID,
-                     client_secret=CLIENT_SECRET_KEY,
-                     password=BOT_PASSWORD,
-                     user_agent='Game Bot by BobbaGanush87',
-                     username='RoboBurnie')
-    
+    reddit = praw.Reddit(
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET_KEY,
+        password=BOT_PASSWORD,
+        user_agent="Game Bot by BobbaGanush87",
+        username="RoboBurnie",
+    )
+
     # Find standings widget
-    widgets = reddit.subreddit('heat').widgets
+    widgets = reddit.subreddit("heat").widgets
     standings_widget = None
     for widget in widgets.sidebar:
-        if widget.shortName.lower() == 'standings':
+        if widget.shortName.lower() == "standings":
             standings_widget = widget
             break
-    
+
     # Get latest standings from NBA api and build Markdown
     if standings_widget:
-        nba_standings = get_todays_standings()
-        standings_markdown = 'STANDINGS\n\n| | Team | W | L | Pct |\n|--|--|--|--|--|'
-        
+        nba_standings = helpers.get_todays_standings()
+        standings_markdown = "STANDINGS\n\n| | Team | W | L | Pct |\n|--|--|--|--|--|"
+
         for position, standing in enumerate(nba_standings, start=1):
-            team_nickname = '{}'.format(standing["teamSitesOnly"]["teamNickname"])
+            team_nickname = "{}".format(standing["teamSitesOnly"]["teamNickname"])
             if standing["teamSitesOnly"]["teamTricode"] == TEAM:
-                team_nickname = '**{}**'.format(standing["teamSitesOnly"]["teamNickname"])
-            standing_markdown = '\n| {} |  {} | {} | {} | {}'.format(position, team_nickname, standing["win"], standing["loss"], standing["winPct"])
+                team_nickname = "**{}**".format(
+                    standing["teamSitesOnly"]["teamNickname"]
+                )
+            standing_markdown = "\n| {} |  {} | {} | {} | {}".format(
+                position,
+                team_nickname,
+                standing["win"],
+                standing["loss"],
+                standing["winPct"],
+            )
             standings_markdown += standing_markdown
-        
+
         standings_widget.mod.update(text=standings_markdown, css=css_str)
-        print('standings updated')    
+        print("standings updated")
