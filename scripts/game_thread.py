@@ -93,14 +93,14 @@ if __name__ == '__main__':
                          user_agent='Game Bot by BobbaGanush87',
                          username='RoboBurnie')
         
-        submission = reddit.subreddit('heatcss').submit(title, selftext=self_text, send_replies=False, flair_id='8a22ad40-c182-11e3-877e-12313b0d38eb')
+        submission = reddit.subreddit('heat').submit(title, selftext=self_text, send_replies=False, flair_id='92815388-3a88-11e2-a4e1-12313d14a568')
         submission.mod.sticky()
         submission.mod.suggested_sort('new')
         
         # Unsticky Post Game Thread (if any)
-        subreddit = reddit.subreddit('heatcss')
+        subreddit = reddit.subreddit('heat')
         for post in subreddit.hot(limit=5):
-            if post.stickied and "[Post Game Thread]" in post.title:
+            if post.stickied and "[Post Game]" in post.title:
                 post.mod.sticky(False)
                 break
                 
