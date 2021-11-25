@@ -108,8 +108,8 @@ def main(action):
                 )
 
         elif action == "update":
-            for post in subreddit.hot(limit=5):
-                if post.stickied and "[Around the League]" in post.title:
+            for post in subreddit.new(limit=35):
+                if "[Around the League]" in post.title:
                     post.edit(body)
                     post.save()
                     break
