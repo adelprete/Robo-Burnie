@@ -1,26 +1,32 @@
+import logging
 import sys
 from datetime import datetime
+from typing import Tuple
 
 import praw
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 from constants import TEAM_TRI_TO_INFO
+from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
 
-CURRENT_TIME = datetime.now().strftime("%a, %b %d, %Y %I:%M %p")
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.INFO,
+    format="%(asctime)s - %(message)s",
+    datefmt="%d-%b-%y %H:%M:%S",
+)
 
 
-def main(action):
+def main(action: str) -> None:
 
-    todays_game = helpers.get_todays_game(team="DET")
-
+    todays_game = helpers.get_todays_game(team="MIA")
     if todays_game == {}:
-        print(f"[{CURRENT_TIME}]: No Game Today")
+        logging.info("No Game Today")
     elif todays_game.get("statusNum") == 1:
-        print(f"[{CURRENT_TIME}]: Game hasn't started yet")
+        logging.info("Game hasn't started yet")
 
         # Generate the details of our post
-        title, self_text = get_post_details(todays_game)
+        title, self_text = generate_post_details(todays_game)
 
         reddit = praw.Reddit(
             client_id=CLIENT_ID,
@@ -29,13 +35,13 @@ def main(action):
             user_agent="Game Bot by BobbaGanush87",
             username="RoboBurnie",
         )
-        subreddit = reddit.subreddit("heatCSS")
+        subreddit = reddit.subreddit("heat")
 
         if action == "create":
             create_game_thread(subreddit, title, self_text)
 
 
-def get_post_details(todays_game):
+def generate_post_details(todays_game: dict) -> Tuple[str, str]:
     # Grab general game information
     visitor_team_name = TEAM_TRI_TO_INFO[todays_game["vTeam"]["triCode"]]["full_name"]
     visitor_reddit = TEAM_TRI_TO_INFO[todays_game["vTeam"]["triCode"]]["reddit"]
@@ -109,7 +115,7 @@ def get_post_details(todays_game):
     return title, self_text
 
 
-def create_game_thread(subreddit, title, self_text):
+def create_game_thread(subreddit: str, title: str, self_text: str) -> None:
     game_thread_exists = False
     for post in subreddit.hot(limit=10):
         if post.stickied and "[Game Thread]" in post.title:
@@ -121,7 +127,7 @@ def create_game_thread(subreddit, title, self_text):
             title,
             selftext=self_text,
             send_replies=False,
-            flair_id="8a22ad40-c182-11e3-877e-12313b0d38eb",
+            flair_id="92815388-3a88-11e2-a4e1-12313d14a568",
         )
         submission.mod.sticky()
         submission.mod.suggested_sort("new")
@@ -132,9 +138,9 @@ def create_game_thread(subreddit, title, self_text):
                 post.mod.sticky(False)
                 break
 
-        print(f"[{CURRENT_TIME}]: Game thread posted")
+        logging.info("Game thread posted")
     else:
-        print(f"[{CURRENT_TIME}]: Game thread already posted")
+        logging.info("Game thread already posted")
 
 
 if __name__ == "__main__":

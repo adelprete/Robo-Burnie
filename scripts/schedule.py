@@ -1,4 +1,6 @@
+import logging
 import os.path
+import sys
 import time
 from datetime import datetime, timedelta
 
@@ -8,18 +10,26 @@ from dateutil.parser import parse
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+from googleapiclient.discovery import Resource, build
 
 from constants import TEAM_ID_TO_INFO
+from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
+
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.INFO,
+    format="%(asctime)s - %(message)s",
+    datefmt="%d-%b-%y %H:%M:%S",
+)
+
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 CALENDAR_ID = "heat.sub.mods@gmail.com"
 YEAR = 2021
 
 
-def build_games_map():
+def build_games_map() -> dict:
     all_games = helpers.get_full_schedule()
 
     games_map = {}
@@ -29,7 +39,7 @@ def build_games_map():
     return games_map
 
 
-def get_google_calendar_service():
+def get_google_calendar_service() -> Resource:
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -52,7 +62,7 @@ def get_google_calendar_service():
     return service
 
 
-def build_events_map(service, current_time: str):
+def build_events_map(service: Resource, current_time: str) -> dict:
     events_list = (
         service.events().list(calendarId=CALENDAR_ID, timeMin=current_time).execute()
     )
@@ -63,7 +73,7 @@ def build_events_map(service, current_time: str):
     return events_map
 
 
-def main():
+def main() -> None:
     # game_map = build_games_map()
     all_games = helpers.get_full_schedule(YEAR)
 
@@ -111,7 +121,7 @@ def main():
         # cause of quotas
         time.sleep(0.5)
 
-    print("Calender Updated")
+    logging.info("Calender Updated")
     # Connect to Reddit
     reddit = praw.Reddit(
         client_id=CLIENT_ID,
@@ -130,7 +140,7 @@ def main():
             break
 
     schedule_widget.mod.update(requiresSync=True)
-    print("Calendar widget synced")
+    logging.info("Calendar widget synced")
 
 
 if __name__ == "__main__":

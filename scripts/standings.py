@@ -1,8 +1,19 @@
-import praw
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+import logging
+import sys
 
+import praw
+
+from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
 from settings import TEAM
+
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.INFO,
+    format="%(asctime)s - %(message)s",
+    datefmt="%d-%b-%y %H:%M:%S",
+)
+
 
 # The css on the custom widget gets saved as a giant string
 css_str = """
@@ -101,4 +112,4 @@ if __name__ == "__main__":
             standings_markdown += standing_markdown
 
         standings_widget.mod.update(text=standings_markdown, css=css_str)
-        print("standings updated")
+        logging.info("standings updated")
