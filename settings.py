@@ -1,1 +1,2 @@
+SUBREDDIT = "heat"
 TEAM = "MIA"
