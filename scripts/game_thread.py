@@ -10,7 +10,7 @@ from scripts import helpers
 
 def main(action):
 
-    todays_game = helpers.get_todays_game()
+    todays_game = helpers.get_todays_game(team='DET')
 
     if todays_game == {}:
         print(
@@ -119,7 +119,7 @@ def main(action):
                     title,
                     selftext=self_text,
                     send_replies=False,
-                    flair_id="92815388-3a88-11e2-a4e1-12313d14a568",
+                    flair_id="8a22ad40-c182-11e3-877e-12313b0d38eb",
                 )
                 submission.mod.sticky()
                 submission.mod.suggested_sort("new")
@@ -132,6 +132,12 @@ def main(action):
 
                 print(
                     "[{}]: Game thread posted".format(
+                        datetime.now().strftime("%a, %b %d, %Y %I:%M %p")
+                    )
+                )
+            else:
+                print(
+                    "[{}]: Game thread already posted".format(
                         datetime.now().strftime("%a, %b %d, %Y %I:%M %p")
                     )
                 )
