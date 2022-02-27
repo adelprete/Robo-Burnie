@@ -31,7 +31,7 @@ def get_todays_games(hours_offset=0):
     return scoreboard["games"]
 
 
-def get_todays_game():
+def get_todays_game(team=TEAM):
     """Get today's game for specific team"""
     today = datetime.utcnow() - timedelta(hours=5)
     games = requests.get(
@@ -42,7 +42,7 @@ def get_todays_game():
 
     todays_game = {}
     for game in games["games"]:
-        if game["vTeam"]["triCode"] == TEAM or game["hTeam"]["triCode"] == TEAM:
+        if game["vTeam"]["triCode"] == team or game["hTeam"]["triCode"] == team:
             todays_game = game
 
     return todays_game
