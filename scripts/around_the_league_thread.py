@@ -79,8 +79,8 @@ def generate_post_details(todays_games: list) -> Tuple[str, str]:
     title = "[Around the League] Discuss today's NBA news and games"
 
     body = (
-        f"| **Visitors** | **Home** | **Score** | **Time** | **Box Score** |\n"
-        f"| :---: | :---: | :---: | :---: | :---: |\n"
+        f"| **Visitors** | **Home** | **Score** | **Time** |\n"
+        f"| :---: | :---: | :---: | :---: |\n"
     )
     for game in todays_games:
 
@@ -95,9 +95,9 @@ def generate_post_details(todays_games: list) -> Tuple[str, str]:
             game_time = "Final"
 
         score = f"{game['vTeam']['score']:>3} - {game['hTeam']['score']:<3}"
-        box_score = f"[Link]({helpers.get_game_link(game)})"
+        #box_score = f"[Link]({helpers.get_game_link(game)})"
 
-        game_details = f"| {TEAM_ID_TO_INFO[game['vTeam']['teamId']]['nickname']} | {TEAM_ID_TO_INFO[game['hTeam']['teamId']]['nickname']} | {score} | {game_time} | {box_score} |\n"
+        game_details = f"| {TEAM_ID_TO_INFO[game['vTeam']['teamId']]['nickname']} | {TEAM_ID_TO_INFO[game['hTeam']['teamId']]['nickname']} | {score} | {game_time} |\n"
         """
         game_details = (
             f"| Teams | Score |\n"

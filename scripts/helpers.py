@@ -30,6 +30,13 @@ def get_todays_games(hours_offset=0):
     ).json()
     return scoreboard["games"]
 
+def get_todays_game_v2(team=TEAM):
+    games = requests.get("https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json").json()
+    todays_game = {}
+    for game in games["scoreboard"]["games"]:
+        if game["homeTeam"]["teamTricode"] == team or game["awayTeam"]["teamTricode"] == team:
+            todays_game = game
+    return todays_game
 
 def get_todays_game(team=TEAM):
     """Get today's game for specific team"""
@@ -61,4 +68,4 @@ def get_boxscore(gameid):
 
 def get_game_link(game):
     """Create box score link for specific game"""
-    return f"https://www.nba.com/game/{game['vTeam']['triCode']}-vs-{game['hTeam']['triCode']}-{game['gameId']}/box-score#box-score"
+    return f"https://www.nba.com/game/{game['awayTeam']['teamTricode']}-vs-{game['homeTeam']['teamTricode']}-{game['gameId']}/box-score#box-score"
