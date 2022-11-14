@@ -4,11 +4,10 @@ from datetime import datetime
 from typing import Tuple
 
 import praw
+from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 from constants import TEAM_TRI_TO_INFO
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
-
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -44,24 +43,28 @@ def main(action: str) -> None:
 
 def generate_post_details(todays_game: dict) -> Tuple[str, str]:
     # Grab general game information
-    visitor_team_name = TEAM_TRI_TO_INFO[todays_game["awayTeam"]["teamTricode"]]["full_name"]
+    visitor_team_name = (
+        f"{todays_game['awayTeam']['teamCity']} {todays_game['awayTeam']['teamName']}"
+    )
     visitor_reddit = TEAM_TRI_TO_INFO[todays_game["awayTeam"]["teamTricode"]]["reddit"]
     visitor_win = todays_game["awayTeam"]["wins"]
     visitor_loss = todays_game["awayTeam"]["losses"]
 
-    home_team_name = TEAM_TRI_TO_INFO[todays_game["homeTeam"]["teamTricode"]]["full_name"]
+    home_team_name = (
+        f"{todays_game['homeTeam']['teamCity']} {todays_game['homeTeam']['teamName']}"
+    )
     home_reddit = TEAM_TRI_TO_INFO[todays_game["homeTeam"]["teamTricode"]]["reddit"]
     home_win = todays_game["homeTeam"]["wins"]
     home_loss = todays_game["homeTeam"]["losses"]
 
     # Grab Broadcast information and build its string while we're at it
-    #broadcast_info = todays_game["watch"]["broadcast"]["broadcasters"]
-    #broadcast_str = ""
-    #if broadcast_info["national"]:
+    # broadcast_info = todays_game["watch"]["broadcast"]["broadcasters"]
+    # broadcast_str = ""
+    # if broadcast_info["national"]:
     #    broadcast_str += f"{broadcast_info['national'][0]['longName']} / "
-    #if broadcast_info["vTeam"]:
+    # if broadcast_info["vTeam"]:
     #    broadcast_str += f"{broadcast_info['vTeam'][0]['longName']} / "
-    #if broadcast_info["hTeam"]:
+    # if broadcast_info["hTeam"]:
     #    broadcast_str += f"{broadcast_info['hTeam'][0]['longName']}"
 
     # Get Date information

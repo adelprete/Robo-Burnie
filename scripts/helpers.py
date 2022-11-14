@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 
 import requests
+from nba_api.live.nba.endpoints import scoreboard
 
 from settings import TEAM
-from nba_api.live.nba.endpoints import scoreboard
 
 
 def get_todays_standings():
@@ -31,14 +31,19 @@ def get_todays_games(hours_offset=0):
     ).json()
     return scoreboard["games"]
 
+
 def get_todays_game_v2(team=TEAM):
 
     # Today's Score Board
-    games = scoreboard.ScoreBoard().get_dict()['scoreboard']['games']
+    games = scoreboard.ScoreBoard().get_dict()["scoreboard"]["games"]
     for game in games:
-        if game["homeTeam"]["teamTricode"] == team or game["awayTeam"]["teamTricode"] == team:
+        if (
+            game["homeTeam"]["teamTricode"] == team
+            or game["awayTeam"]["teamTricode"] == team
+        ):
             todays_game = game
     return todays_game
+
 
 def get_todays_game(team=TEAM):
     """Get today's game for specific team"""

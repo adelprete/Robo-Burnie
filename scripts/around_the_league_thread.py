@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 from typing import Tuple
 
 import praw
+from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 from constants import TEAM_ID_TO_INFO
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
 
 logging.basicConfig(
@@ -95,7 +95,7 @@ def generate_post_details(todays_games: list) -> Tuple[str, str]:
             game_time = "Final"
 
         score = f"{game['vTeam']['score']:>3} - {game['hTeam']['score']:<3}"
-        #box_score = f"[Link]({helpers.get_game_link(game)})"
+        # box_score = f"[Link]({helpers.get_game_link(game)})"
 
         game_details = f"| {TEAM_ID_TO_INFO[game['vTeam']['teamId']]['nickname']} | {TEAM_ID_TO_INFO[game['hTeam']['teamId']]['nickname']} | {score} | {game_time} |\n"
         """
