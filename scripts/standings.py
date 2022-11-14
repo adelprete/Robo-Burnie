@@ -4,6 +4,7 @@ import sys
 import praw
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
+from constants import TEAM_ID_TO_INFO
 from scripts import helpers
 from settings import TEAM
 
@@ -93,21 +94,19 @@ if __name__ == "__main__":
 
     # Get latest standings from NBA api and build Markdown
     if standings_widget:
-        nba_standings = helpers.get_todays_standings()
+        standings = helpers.get_todays_standings()
         standings_markdown = "STANDINGS\n\n| | Team | W | L | Pct |\n|--|--|--|--|--|"
 
-        for position, standing in enumerate(nba_standings, start=1):
-            team_nickname = "{}".format(standing["teamSitesOnly"]["teamNickname"])
-            if standing["teamSitesOnly"]["teamTricode"] == TEAM:
-                team_nickname = "**{}**".format(
-                    standing["teamSitesOnly"]["teamNickname"]
-                )
+        for position, team in enumerate(standings, start=1):
+            team_name = "{}".format(team["TeamName"])
+            if TEAM_ID_TO_INFO[team["TeamId"]]["tricode"] == TEAM:
+                team_name = "**{}**".format(team["TeamName"])
             standing_markdown = "\n| {} |  {} | {} | {} | {}".format(
                 position,
-                team_nickname,
-                standing["win"],
-                standing["loss"],
-                standing["winPct"],
+                team_name,
+                team["WINS"],
+                team["LOSSES"],
+                team["WinPCT"],
             )
             standings_markdown += standing_markdown
 

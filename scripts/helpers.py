@@ -2,15 +2,18 @@ from datetime import datetime, timedelta
 
 import requests
 from nba_api.live.nba.endpoints import scoreboard
+from nba_api.stats.endpoints import leaguestandings
 
 from settings import TEAM
 
 
 def get_todays_standings():
-    standings = requests.get(
-        "https://data.nba.net/data/10s/prod/v2/current/standings_conference.json"
-    ).json()
-    return standings["league"]["standard"]["conference"]["east"]
+    result = leaguestandings.LeagueStandings().get_dict()["resultSets"][0]
+
+    header = result["header"]
+    rows = [row for row in result["rowSet"] if row[5] == "East"]
+    standings = [dict(zip(header, sublist)) for sublist in rows]
+    return standings
 
 
 def get_full_schedule(year):
