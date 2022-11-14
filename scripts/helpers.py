@@ -9,8 +9,8 @@ from settings import TEAM
 
 def get_todays_standings():
     result = leaguestandings.LeagueStandings().get_dict()["resultSets"][0]
-
-    header = result["header"]
+    
+    header = result["headers"]
     rows = [row for row in result["rowSet"] if row[5] == "East"]
     standings = [dict(zip(header, sublist)) for sublist in rows]
     return standings

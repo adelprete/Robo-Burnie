@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
         for position, team in enumerate(standings, start=1):
             team_name = "{}".format(team["TeamName"])
-            if TEAM_ID_TO_INFO[team["TeamId"]]["tricode"] == TEAM:
+            if TEAM_ID_TO_INFO[str(team["TeamID"])]["tricode"] == TEAM:
                 team_name = "**{}**".format(team["TeamName"])
             standing_markdown = "\n| {} |  {} | {} | {} | {}".format(
                 position,
