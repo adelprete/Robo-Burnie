@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import requests
 
 from settings import TEAM
+from nba_api.live.nba.endpoints import scoreboard
 
 
 def get_todays_standings():
@@ -31,9 +32,10 @@ def get_todays_games(hours_offset=0):
     return scoreboard["games"]
 
 def get_todays_game_v2(team=TEAM):
-    games = requests.get("https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json").json()
-    todays_game = {}
-    for game in games["scoreboard"]["games"]:
+
+    # Today's Score Board
+    games = scoreboard.ScoreBoard().get_dict()['scoreboard']['games']
+    for game in games:
         if game["homeTeam"]["teamTricode"] == team or game["awayTeam"]["teamTricode"] == team:
             todays_game = game
     return todays_game
