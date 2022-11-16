@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
 import requests
-from nba_api.live.nba.endpoints import scoreboard
 from nba_api.stats.endpoints import leaguestandings
 
 from settings import TEAM
@@ -9,10 +8,9 @@ from settings import TEAM
 
 def get_todays_standings():
     result = leaguestandings.LeagueStandings().get_dict()["resultSets"][0]
-    
+
     header = result["headers"]
-    rows = [row for row in result["rowSet"] if row[5] == "East"]
-    standings = [dict(zip(header, sublist)) for sublist in rows]
+    standings = [dict(zip(header, sublist)) for sublist in result["rowSet"]]
     return standings
 
 
@@ -35,19 +33,6 @@ def get_todays_games(hours_offset=0):
     return scoreboard["games"]
 
 
-def get_todays_game_v2(team=TEAM):
-
-    # Today's Score Board
-    games = scoreboard.ScoreBoard().get_dict()["scoreboard"]["games"]
-    for game in games:
-        if (
-            game["homeTeam"]["teamTricode"] == team
-            or game["awayTeam"]["teamTricode"] == team
-        ):
-            todays_game = game
-    return todays_game
-
-
 def get_todays_game(team=TEAM):
     """Get today's game for specific team"""
     today = datetime.utcnow() - timedelta(hours=5)
@@ -61,6 +46,18 @@ def get_todays_game(team=TEAM):
     for game in games["games"]:
         if game["vTeam"]["triCode"] == team or game["hTeam"]["triCode"] == team:
             todays_game = game
+
+    # Grab the team wins and losses from another source because our
+    # orignal source stopped providing them for some reason.
+    if todays_game:
+        standings = get_todays_standings()
+        for team in standings:
+            if todays_game["vTeam"]["teamId"] == str(team["TeamID"]):
+                todays_game["vTeam"]["win"] = team["WINS"]
+                todays_game["vTeam"]["loss"] = team["LOSSES"]
+            if todays_game["hTeam"]["teamId"] == str(team["TeamID"]):
+                todays_game["hTeam"]["win"] = team["WINS"]
+                todays_game["hTeam"]["loss"] = team["LOSSES"]
 
     return todays_game
 

@@ -98,6 +98,9 @@ if __name__ == "__main__":
         standings_markdown = "STANDINGS\n\n| | Team | W | L | Pct |\n|--|--|--|--|--|"
 
         for position, team in enumerate(standings, start=1):
+            if team["Conference"] == "West":
+                continue
+
             team_name = "{}".format(team["TeamName"])
             if TEAM_ID_TO_INFO[str(team["TeamID"])]["tricode"] == TEAM:
                 team_name = "**{}**".format(team["TeamName"])
