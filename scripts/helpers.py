@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 import requests
+from nba_api.live.nba.endpoints import scoreboard
 from nba_api.stats.endpoints import leaguestandings
 
 from settings import TEAM
@@ -31,6 +32,20 @@ def get_todays_games(hours_offset=0):
         f"https://data.nba.net/data/10s/prod/v1/{get_todays_date_str(hours_offset)}/scoreboard.json"
     ).json()
     return scoreboard["games"]
+
+def get_todays_game_v2(team=TEAM):
+
+    # Today's Score Board
+    games = scoreboard.ScoreBoard().get_dict()["scoreboard"]["games"]
+
+    todays_game = {}
+    for game in games:
+        if (
+            game["homeTeam"]["teamTricode"] == team
+            or game["awayTeam"]["teamTricode"] == team
+        ):
+            todays_game = game
+    return todays_game
 
 
 def get_todays_game(team=TEAM):
