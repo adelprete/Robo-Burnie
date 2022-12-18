@@ -90,4 +90,4 @@ def get_boxscore(gameid):
 
 def get_game_link(game):
     """Create box score link for specific game"""
-    return f"https://www.nba.com/game/{game['awayTeam']['teamTricode']}-vs-{game['homeTeam']['teamTricode']}-{game['gameId']}/box-score#box-score"
+    return f"https://www.nba.com/game/{game['vTeam']['triCode']}-vs-{game['hTeam']['triCode']}-{game['gameId']}/box-score#box-score"
