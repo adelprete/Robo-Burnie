@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Tuple
 
 import praw
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 from constants import TEAM_TRI_TO_INFO
+from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
 
 logging.basicConfig(
@@ -24,10 +24,10 @@ def main(action: str) -> None:
         logging.info("No Game Today")
     elif todays_game.get("gameStatus") == 1:
         logging.info("Game hasn't started yet")
-        
+
         # Generate the details of our post
         title, self_text = generate_post_details(todays_game)
-        
+
         reddit = praw.Reddit(
             client_id=CLIENT_ID,
             client_secret=CLIENT_SECRET_KEY,
@@ -36,7 +36,7 @@ def main(action: str) -> None:
             username="RoboBurnie",
         )
         subreddit = reddit.subreddit("heat")
-        
+
         if action == "create":
             create_game_thread(subreddit, title, self_text)
 
@@ -119,7 +119,7 @@ def create_game_thread(subreddit: str, title: str, self_text: str) -> None:
         if post.stickied and "[Game Thread]" in post.title:
             game_thread_exists = True
             break
-    
+
     if game_thread_exists == False:
         # Unsticky Post Game Thread (if any)
         for post in subreddit.hot(limit=5):

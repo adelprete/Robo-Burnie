@@ -2,9 +2,9 @@ import logging
 import sys
 
 import praw
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 from constants import TEAM_ID_TO_INFO
+from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
 from settings import TEAM
 

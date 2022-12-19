@@ -33,6 +33,7 @@ def get_todays_games(hours_offset=0):
     ).json()
     return scoreboard["games"]
 
+
 def get_todays_game_v2(team=TEAM):
 
     # Today's Score Board
