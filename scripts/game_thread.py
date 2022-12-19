@@ -22,12 +22,12 @@ def main(action: str) -> None:
     todays_game = helpers.get_todays_game_v2(team="MIA")
     if todays_game == {}:
         logging.info("No Game Today")
-    elif todays_game.get("statusNum") == 1:
+    elif todays_game.get("gameStatus") == 1:
         logging.info("Game hasn't started yet")
-
+        
         # Generate the details of our post
         title, self_text = generate_post_details(todays_game)
-
+        
         reddit = praw.Reddit(
             client_id=CLIENT_ID,
             client_secret=CLIENT_SECRET_KEY,
@@ -36,7 +36,7 @@ def main(action: str) -> None:
             username="RoboBurnie",
         )
         subreddit = reddit.subreddit("heat")
-
+        
         if action == "create":
             create_game_thread(subreddit, title, self_text)
 
@@ -100,12 +100,10 @@ def generate_post_details(todays_game: dict) -> Tuple[str, str]:
         "| Game Details |  |\n"
         "|--|--|\n"
         "| **Tip-Off Time** | {} |\n"
-        "| **TV/Radio** | {} |\n"
         "| **Game Info & Stats** | [nba.com]({}) |"
     )
 
     table = table.format(
-        todays_game["homeTeam"]["teamCity"],
         start_time,
         helpers.get_game_link(todays_game),
     )
@@ -121,7 +119,7 @@ def create_game_thread(subreddit: str, title: str, self_text: str) -> None:
         if post.stickied and "[Game Thread]" in post.title:
             game_thread_exists = True
             break
-
+    
     if game_thread_exists == False:
         # Unsticky Post Game Thread (if any)
         for post in subreddit.hot(limit=5):
