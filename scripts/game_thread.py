@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Tuple
 
 import praw
-
-from constants import TEAM_TRI_TO_INFO
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+
+from constants import TEAM_ID_TO_INFO, TEAM_TRI_TO_INFO
 from scripts import helpers
 
 logging.basicConfig(
@@ -22,7 +22,7 @@ def main(action: str) -> None:
     todays_game = helpers.get_todays_game_v2(team="MIA")
     if todays_game == {}:
         logging.info("No Game Today")
-    elif todays_game.get("gameStatus") == 1:
+    elif todays_game.get("status_id") == 1:
         logging.info("Game hasn't started yet")
 
         # Generate the details of our post
@@ -42,36 +42,26 @@ def main(action: str) -> None:
 
 
 def generate_post_details(todays_game: dict) -> Tuple[str, str]:
+
+    home_team = TEAM_ID_TO_INFO[todays_game["home_team_id"]]
+    away_team = TEAM_ID_TO_INFO[todays_game["away_team_id"]]
+
     # Grab general game information
-    visitor_team_name = (
-        f"{todays_game['awayTeam']['teamCity']} {todays_game['awayTeam']['teamName']}"
-    )
-    visitor_reddit = TEAM_TRI_TO_INFO[todays_game["awayTeam"]["teamTricode"]]["reddit"]
-    visitor_win = todays_game["awayTeam"]["wins"]
-    visitor_loss = todays_game["awayTeam"]["losses"]
+    visitor_team_name = away_team["fullName"]
+    visitor_reddit = TEAM_TRI_TO_INFO[away_team["teamTricode"]]["reddit"]
+    visitor_win = todays_game["away_team_wins"]
+    visitor_loss = todays_game["away_team_losses"]
 
-    home_team_name = (
-        f"{todays_game['homeTeam']['teamCity']} {todays_game['homeTeam']['teamName']}"
-    )
-    home_reddit = TEAM_TRI_TO_INFO[todays_game["homeTeam"]["teamTricode"]]["reddit"]
-    home_win = todays_game["homeTeam"]["wins"]
-    home_loss = todays_game["homeTeam"]["losses"]
-
-    # Grab Broadcast information and build its string while we're at it
-    # broadcast_info = todays_game["watch"]["broadcast"]["broadcasters"]
-    # broadcast_str = ""
-    # if broadcast_info["national"]:
-    #     broadcast_str += f"{broadcast_info['national'][0]['longName']} / "
-    # if broadcast_info["vTeam"]:
-    #     broadcast_str += f"{broadcast_info['vTeam'][0]['longName']} / "
-    # if broadcast_info["hTeam"]:
-    #     broadcast_str += f"{broadcast_info['hTeam'][0]['longName']}"
+    home_team_name = home_team["fullName"]
+    home_reddit = TEAM_TRI_TO_INFO[home_team["teamTricode"]]["reddit"]
+    home_win = todays_game["home_team_wins"]
+    home_loss = todays_game["home_team_losses"]
 
     # Get Date information
     today = datetime.utcnow()
     month = today.strftime("%m")
     day = today.strftime("%d")
-    start_time = todays_game["gameStatusText"]
+    start_time = todays_game["status_text"]
 
     title = "[Game Thread] {} ({}-{}) @ {} ({}-{}) - {}/{} {}".format(
         visitor_team_name,
