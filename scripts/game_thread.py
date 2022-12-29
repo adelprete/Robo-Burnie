@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Tuple
 
 import praw
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 from constants import TEAM_ID_TO_INFO, TEAM_TRI_TO_INFO
+from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
 
 logging.basicConfig(
@@ -45,7 +45,7 @@ def generate_post_details(todays_game: dict) -> Tuple[str, str]:
 
     home_team = TEAM_ID_TO_INFO[todays_game["home_team_id"]]
     away_team = TEAM_ID_TO_INFO[todays_game["away_team_id"]]
-    
+
     # Grab general game information
     visitor_team_name = away_team["fullName"]
     visitor_reddit = TEAM_TRI_TO_INFO[away_team["tricode"]]["reddit"]

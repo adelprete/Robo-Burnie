@@ -11,9 +11,9 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 from constants import TEAM_ID_TO_INFO
+from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
 
 logging.basicConfig(

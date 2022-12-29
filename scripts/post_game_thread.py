@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 from typing import Tuple
 
 import praw
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
+from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
 from settings import TEAM, TEAM_INFO
 
