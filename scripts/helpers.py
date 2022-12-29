@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import List
 
 import requests
 from nba_api.stats.endpoints import (boxscoresummaryv2, leaguestandings,
@@ -16,7 +17,7 @@ def get_todays_standings():
     return standings
 
 
-def get_full_schedule(year: int, team_name: str) -> list[dict]:
+def get_full_schedule(year: int, team_name: str) -> List[dict]:
     schedule = requests.get(
         f"https://data.nba.net/data/10s/prod/v1/{year}/teams/{team_name}/schedule.json"
     ).json()
