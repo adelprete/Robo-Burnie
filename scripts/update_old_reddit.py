@@ -64,7 +64,6 @@ def update_standings(sidebar, team_to_highlight):
     for team in standings:
         if team["Conference"] == "West":
             continue
-
         position = count
         team_city = team["TeamCity"]
         team_reddit = TEAM_ID_TO_INFO[str(team["TeamID"])]["reddit"]

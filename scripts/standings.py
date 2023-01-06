@@ -96,8 +96,9 @@ if __name__ == "__main__":
     if standings_widget:
         standings = helpers.get_todays_standings()
         standings_markdown = "STANDINGS\n\n| | Team | W | L | Pct |\n|--|--|--|--|--|"
-
-        for position, team in enumerate(standings, start=1):
+        
+        position = 1
+        for team in standings:
             if team["Conference"] == "West":
                 continue
 
@@ -112,6 +113,7 @@ if __name__ == "__main__":
                 team["WinPCT"],
             )
             standings_markdown += standing_markdown
+            position += 1
 
         standings_widget.mod.update(text=standings_markdown, css=css_str)
         logging.info("standings updated")
