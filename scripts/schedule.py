@@ -16,6 +16,10 @@ from constants import TEAM_ID_TO_INFO
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
 
+"""
+SEEMS TO ONLY WORK IF I RUN THIS ON MY LOCAL MACHINE AND NOT ON THE RASPBERRY PI
+"""
+
 logging.basicConfig(
     stream=sys.stdout,
     level=logging.INFO,
@@ -26,17 +30,6 @@ logging.basicConfig(
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 CALENDAR_ID = "heat.sub.mods@gmail.com"
-YEAR = 2021
-
-
-def build_games_map() -> dict:
-    all_games = helpers.get_full_team_schedule()
-
-    games_map = {}
-    for game in all_games:
-        games_map[game["gameId"]] = game
-
-    return games_map
 
 
 def get_google_calendar_service() -> Resource:
@@ -74,8 +67,7 @@ def build_events_map(service: Resource, current_time: str) -> dict:
 
 
 def main() -> None:
-    # game_map = build_games_map()
-    all_games = helpers.get_full_team_schedule(YEAR)
+    all_games = helpers.get_full_team_schedule("heat")
 
     service = get_google_calendar_service()
     current_time = datetime.now(tz=pytz.utc).isoformat()
@@ -83,20 +75,20 @@ def main() -> None:
 
     for game in all_games:
         # skip games in the past
-        if game["startTimeUTC"] < current_time:
+        if game["gameDateTimeUTC"] < current_time:
             continue
 
         # Make our summary
-        if game["isHomeTeam"]:
-            summary = TEAM_ID_TO_INFO[game["vTeam"]["teamId"]]["nickname"]
+        if game["homeTeam"]["teamSlug"] == "heat":
+            summary = TEAM_ID_TO_INFO[str(game["awayTeam"]["teamId"])]["nickname"]
         else:
-            summary = "@" + TEAM_ID_TO_INFO[game["hTeam"]["teamId"]]["nickname"]
+            summary = "@" + TEAM_ID_TO_INFO[str(game["homeTeam"]["teamId"])]["nickname"]
 
-        if game["seasonStageId"] == 1:
+        if game["seriesText"].lower() == 'preseason':
             summary += " (preseason)"
 
         # convert time to eastern
-        utc_datetime = parse(game["startTimeUTC"])
+        utc_datetime = parse(game["gameDateTimeUTC"])
         eastern_datetime = utc_datetime.replace(tzinfo=pytz.utc).astimezone(
             pytz.timezone("US/Eastern")
         )
