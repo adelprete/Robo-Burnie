@@ -158,7 +158,7 @@ def get_opponent_display_str(game: dict, team: str) -> str:
         opponent_tricode = f'{game["awayTeam"]["teamTricode"]}'
         opponent_reddit = TEAM_ID_TO_INFO.get(str(game["awayTeam"]["teamId"]), {}).get("reddit", "")
     else:
-        opponent_tricode = f' @ {game["homeTeam"]["teamTricode"]}'
+        opponent_tricode = f' @ {game["awayTeam"]["teamTricode"]}'
         opponent_reddit = TEAM_ID_TO_INFO.get(str(game["awayTeam"]["teamId"]), {}).get("reddit", "")
     return f"[{opponent_tricode}]({opponent_reddit})"
 
