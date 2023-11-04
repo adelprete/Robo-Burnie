@@ -16,10 +16,6 @@ from constants import TEAM_ID_TO_INFO
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from scripts import helpers
 
-"""
-SEEMS TO ONLY WORK IF I RUN THIS ON MY LOCAL MACHINE AND NOT ON THE RASPBERRY PI
-"""
-
 logging.basicConfig(
     stream=sys.stdout,
     level=logging.INFO,
