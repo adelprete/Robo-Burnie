@@ -155,11 +155,12 @@ def update_schedule(sidebar_text: str, team_name: str) -> str:
 
 def get_opponent_display_str(game: dict, team: str) -> str:
     if game["homeTeam"]["teamSlug"] == team:
-        opponent_tricode = f'@ {game["awayTeam"]["teamTricode"]}'
-        opponent_reddit = TEAM_ID_TO_INFO.get(game["awayTeam"]["teamId"], {}).get("reddit", "")
-    else:
         opponent_tricode = f'{game["homeTeam"]["teamTricode"]}'
-        opponent_reddit = TEAM_ID_TO_INFO.get(game["awayTeam"]["teamId"], {}).get("reddit", "")
+        opponent_reddit = TEAM_ID_TO_INFO.get(str(game["awayTeam"]["teamId"]), {}).get("reddit", "")
+    else:
+        opponent_tricode = f'@ {game["awayTeam"]["teamTricode"]}'
+        opponent_reddit = TEAM_ID_TO_INFO.get(str(game["awayTeam"]["teamId"]), {}).get("reddit", "")
+    breakpoint()
     return f"[{opponent_tricode}]({opponent_reddit})"
 
 
