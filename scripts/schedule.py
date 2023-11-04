@@ -30,7 +30,7 @@ YEAR = 2021
 
 
 def build_games_map() -> dict:
-    all_games = helpers.get_full_schedule()
+    all_games = helpers.get_full_team_schedule()
 
     games_map = {}
     for game in all_games:
@@ -75,7 +75,7 @@ def build_events_map(service: Resource, current_time: str) -> dict:
 
 def main() -> None:
     # game_map = build_games_map()
-    all_games = helpers.get_full_schedule(YEAR)
+    all_games = helpers.get_full_team_schedule(YEAR)
 
     service = get_google_calendar_service()
     current_time = datetime.now(tz=pytz.utc).isoformat()

@@ -17,11 +17,18 @@ def get_todays_standings():
     return standings
 
 
-def get_full_schedule(year: int, team_name: str) -> List[dict]:
+def get_full_team_schedule(team_name: str) -> List[dict]:
     schedule = requests.get(
-        f"https://data.nba.net/data/10s/prod/v1/{year}/teams/{team_name}/schedule.json"
+        f"https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
     ).json()
-    return schedule["league"]["standard"]
+
+    teams_games = []
+    for game_date in schedule["leagueSchedule"]["gameDates"]:
+        for game in game_date["games"]:
+            if game["homeTeam"]["teamSlug"] == team_name or game["awayTeam"]["teamSlug"] == team_name:
+                teams_games.append(game)
+
+    return teams_games
 
 
 def get_todays_date_str(hours_offset=0):

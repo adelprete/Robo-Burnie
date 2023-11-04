@@ -122,22 +122,22 @@ def update_schedule(sidebar_text: str, team_name: str) -> str:
     )
 
     today = datetime.today()
-    seasons_games = helpers.get_full_schedule(Season.default[:4], team_name)
+    seasons_games = helpers.get_full_team_schedule(team_name)
 
     # Find where we are in the schedule
     for index, game in enumerate(seasons_games):
-        if datetime.strptime(game["startDateEastern"], "%Y%m%d") >= today:
+        if datetime.strptime(game['gameDateEst'][:-10], "%Y-%m-%d") >= today:
             break
-    nearby_games = seasons_games[max(0, index - 5) : index + 5]
+    relevant_games = seasons_games[max(0, index - 5) : index + 5]
 
     schedule_markdown = "##[Schedule](https://www.nba.com/heat/schedule/)\n\n|Date|Matchup|Score|\n|:--:|:--:|:--:|\n"
-    for game in nearby_games:
+    for game in relevant_games:
         date_display_text = (
-            datetime.strptime(game["startDateEastern"], "%Y%m%d").strftime("%a, %b %d")
-            + f" *{game['startTimeEastern']}*"
+            datetime.strptime(game["gameDateEst"][:-10], "%Y-%m-%d").strftime("%a, %b %d")
+            + f" *{game['gameStatusText']}*"
         )
-        opponent_display_str = get_opponent_display_str(game)
-        score_display_str = get_score_display_str(game)
+        opponent_display_str = get_opponent_display_str(game, team_name)
+        score_display_str = get_score_display_str(game, team_name)
 
         game_markdown = "|{}|{}|{}|".format(
             date_display_text, opponent_display_str, score_display_str
@@ -153,33 +153,24 @@ def update_schedule(sidebar_text: str, team_name: str) -> str:
     return updated_sidebar_txt
 
 
-def get_opponent_display_str(game: dict) -> str:
-    if game["isHomeTeam"]:
-        opponent_tricode = f'{TEAM_ID_TO_INFO[game["vTeam"]["teamId"]]["tricode"]}'
-        opponent_reddit = TEAM_ID_TO_INFO[game["vTeam"]["teamId"]]["reddit"]
+def get_opponent_display_str(game: dict, team: str) -> str:
+    if game["homeTeam"]["teamSlug"] == team:
+        opponent_tricode = f'@ {game["awayTeam"]["teamTricode"]}'
+        opponent_reddit = TEAM_ID_TO_INFO.get(game["awayTeam"]["teamId"], {}).get("reddit", "")
     else:
-        opponent_tricode = f'@ {TEAM_ID_TO_INFO[game["hTeam"]["teamId"]]["tricode"]}'
-        opponent_reddit = TEAM_ID_TO_INFO[game["hTeam"]["teamId"]]["reddit"]
+        opponent_tricode = f'{game["homeTeam"]["teamTricode"]}'
+        opponent_reddit = TEAM_ID_TO_INFO.get(game["awayTeam"]["teamId"], {}).get("reddit", "")
     return f"[{opponent_tricode}]({opponent_reddit})"
 
 
-def get_score_display_str(game: dict) -> str:
-    line_scores = boxscoresummaryv2.BoxScoreSummaryV2(game["gameId"]).get_dict()[
-        "resultSets"
-    ][5]["rowSet"]
-    if str(line_scores[0][3]) == game["vTeam"]["teamId"]:
-        away_score = line_scores[0][-1]
-        home_score = line_scores[1][-1]
-    else:
-        away_score = line_scores[1][-1]
-        home_score = line_scores[0][-1]
+def get_score_display_str(game: dict, team: str) -> str:
+    away_score = game["awayTeam"]["score"]
+    home_score = game["homeTeam"]["score"]
 
     score = ""
     if home_score is not None:
         score = f"{away_score} - {home_score}"
-        if (game["isHomeTeam"] and home_score > away_score) or (
-            not game["isHomeTeam"] and away_score > home_score
-        ):
+        if (game["homeTeam"]["teamSlug"] == team and home_score > away_score) or (game["awayTeam"]["teamSlug"] == team and home_score < away_score):
             score = f"**{score}**"
 
     return score
