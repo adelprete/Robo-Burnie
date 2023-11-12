@@ -30,6 +30,18 @@ def get_full_team_schedule(team_name: str) -> List[dict]:
 
     return teams_games
 
+def get_game_from_cdn_endpoint(game_id: str) -> dict:
+    schedule = requests.get(
+        f"https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
+    ).json()
+
+    for game_date in schedule["leagueSchedule"]["gameDates"]:
+        for game in game_date["games"]:
+            if game["gameId"] == game_id:
+                return game
+
+    return {}
+
 
 def get_todays_date_str(hours_offset=0):
     return (datetime.now() - timedelta(hours=hours_offset)).strftime("%Y%m%d")

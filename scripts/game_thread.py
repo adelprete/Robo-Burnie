@@ -20,13 +20,14 @@ logging.basicConfig(
 def main(action: str) -> None:
 
     todays_game = helpers.get_todays_game_v2(team="MIA")
+
     if todays_game == {}:
         logging.info("No Game Today")
     elif todays_game.get("status_id") == 1:
         logging.info("Game hasn't started yet")
 
         # Generate the details of our post
-        title, self_text = generate_post_details(todays_game)
+        title, self_text = generate_post_details(todays_game, "MIA")
 
         reddit = praw.Reddit(
             client_id=CLIENT_ID,
@@ -41,7 +42,11 @@ def main(action: str) -> None:
             create_game_thread(subreddit, title, self_text)
 
 
-def generate_post_details(todays_game: dict) -> Tuple[str, str]:
+def generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
+
+    cdn_game_data = helpers.get_game_from_cdn_endpoint(todays_game["game_id"])
+    tv_channels = get_tv_broadcasters(cdn_game_data, team)
+    radio_channels = get_radio_broadcasters(cdn_game_data, team)
 
     home_team = TEAM_ID_TO_INFO[todays_game["home_team_id"]]
     away_team = TEAM_ID_TO_INFO[todays_game["away_team_id"]]
@@ -90,11 +95,15 @@ def generate_post_details(todays_game: dict) -> Tuple[str, str]:
         "| Game Details |  |\n"
         "|--|--|\n"
         "| **Tip-Off Time** | {} |\n"
+        "| **TV Broadcasts** | {} |\n"
+        "| **Radio Broadcasts** | {} |\n"
         "| **Game Info & Stats** | [nba.com]({}) |"
     )
 
     table = table.format(
         start_time,
+        ", ".join(tv_channels),
+        ", ".join(radio_channels),
         helpers.get_game_link(todays_game),
     )
 
@@ -136,6 +145,29 @@ def create_game_thread(subreddit: str, title: str, self_text: str) -> None:
     else:
         logging.info("Game thread already posted")
 
+def get_tv_broadcasters(game_data: dict, team: str):
+    national_tv_broadcasters = []
+    for broadcaster in game_data['broadcasters']['nationalTvBroadcasters']:
+        national_tv_broadcasters.append(broadcaster['broadcasterAbbreviation'])
+    
+    team_key = 'homeTvBroadcasters' if game_data['homeTeam']['teamTricode'] == team else 'awayTvBroadcasters'
+    team_tv_broadcasters = []
+    for broadcaster in game_data['broadcasters'][team_key]:
+        team_tv_broadcasters.append(broadcaster['broadcasterAbbreviation'])
+    
+    return team_tv_broadcasters + national_tv_broadcasters
+
+def get_radio_broadcasters(game_data: dict, team: str):
+    national_radio_broadcasters = []
+    for broadcaster in game_data['broadcasters']['nationalRadioBroadcasters']:
+        national_radio_broadcasters.append(broadcaster['broadcasterAbbreviation'])
+    
+    team_key = 'homeRadioBroadcasters' if game_data['homeTeam']['teamTricode'] == team else 'awayRadioBroadcasters'
+    team_radio_broadcasters = []
+    for broadcaster in game_data['broadcasters'][team_key]:
+        team_radio_broadcasters.append(broadcaster['broadcasterAbbreviation'])
+    
+    return team_radio_broadcasters + national_radio_broadcasters
 
 if __name__ == "__main__":
 
