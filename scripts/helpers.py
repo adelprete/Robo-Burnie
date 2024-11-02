@@ -1,13 +1,19 @@
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, NamedTuple
 
 import requests
 from nba_api.stats.endpoints import (boxscoresummaryv2, leaguestandings,
                                      scoreboardv2)
+from nba_api.stats.library.parameters import GameDate
 
 from constants import TEAM_ID_TO_INFO
 from settings import TEAM
 
+def create_dictionary_list(headers, rows):
+    result = []
+    for row in rows:
+        result.append(dict(zip(headers, row)))
+    return result
 
 def get_todays_standings():
     result = leaguestandings.LeagueStandings().get_dict()["resultSets"][0]
@@ -42,17 +48,41 @@ def get_game_from_cdn_endpoint(game_id: str) -> dict:
 
     return {}
 
+def get_current_datetime():
+    """Returns"""
+    return datetime.now() - timedelta(hours=4)
 
 def get_todays_date_str(hours_offset=0):
     return (datetime.now() - timedelta(hours=hours_offset)).strftime("%Y%m%d")
 
-
-def get_todays_games(hours_offset=0):
+def get_todays_games() -> list[dict]:
     """Get all games for the day"""
-    scoreboard = requests.get(
-        f"https://data.nba.net/data/10s/prod/v1/{get_todays_date_str(hours_offset)}/scoreboard.json"
-    ).json()
-    return scoreboard["games"]
+    games_data = {}
+    scoreboard = scoreboardv2.ScoreboardV2(game_date=GameDate.get_date_format(get_current_datetime())).get_dict()["resultSets"]
+
+    # Walkthrough each scoreboard section and build out the data for each game
+    game_headers = create_dictionary_list(scoreboard[0]["headers"], scoreboard[0]["rowSet"])
+    for game in game_headers:
+        games_data[game["GAME_ID"]] = {
+            "game_status_text": game["GAME_STATUS_TEXT"],
+            "live_period": game["LIVE_PERIOD"],
+            "live_period_time_bcast": game["LIVE_PERIOD_TIME_BCAST"],
+            "home_team_id": game["HOME_TEAM_ID"],
+            "visitor_team_id": game["VISITOR_TEAM_ID"],
+            "natl_tv_broadcaster_abbreviation": game["NATL_TV_BROADCASTER_ABBREVIATION"],
+        }
+
+    line_scores = create_dictionary_list(scoreboard[1]["headers"], scoreboard[1]["rowSet"])
+    for game in game_headers:
+        games_data[game["GAME_ID"]].update({
+            "team_id": game["TEAM_ID"],
+            "team_abbreviation": game["TEAM_ABBREVIATION"],
+            "team_city_name": game["TEAM_CITY_NAME"],
+            "team_wins_losses": game["TEAM_WINS_LOSSES"],
+            "pts": game["PTS"],
+        })
+
+    return games_data
 
 
 def get_todays_game_v2(team=TEAM):

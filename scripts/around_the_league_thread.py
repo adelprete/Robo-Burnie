@@ -17,15 +17,16 @@ logging.basicConfig(
 )
 
 
-# its eastern time minus 4 hours just to ensure we stay within the same day after midnight on the east coast
+# Today's date is eastern time minus 4 hours just to ensure we stay within the same "day" after midnight on the east coast
 TODAYS_DATE_STR = helpers.get_todays_date_str(hours_offset=3)
 
-SUBREDDIT = "heat"
+SUBREDDIT = "heatcss"
 
 
 def main(action: str) -> None:
 
     todays_games = helpers.get_todays_games(hours_offset=3)
+    breakpoint()
     if not todays_games:
         logging.info("No Games Today")
         return
