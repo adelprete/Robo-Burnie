@@ -1,2 +1,0 @@
-SUBREDDIT = "heat"
-TEAM = "MIA"
