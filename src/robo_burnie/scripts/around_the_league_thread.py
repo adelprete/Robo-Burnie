@@ -22,6 +22,12 @@ TODAYS_DATE_STR = helpers.get_todays_date_str(hours_offset=3)
 
 def main(action: str) -> None:
     """Creates or updates the Around the League thread on the subreddit"""
+
+    todays_game = helpers.get_todays_game_v2(team=TEAM)
+    if todays_game:
+        logging.info(f"{TEAM} Game Today.  Skipping Around the League Thread")
+        return
+
     todays_games = helpers.get_todays_games()
 
     if not todays_games:
