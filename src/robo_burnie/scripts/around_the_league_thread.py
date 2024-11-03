@@ -7,6 +7,7 @@ import praw
 
 from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from .. import helpers
+from ..settings import TEAM, SUBREDDIT
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -18,8 +19,6 @@ logging.basicConfig(
 
 # Today's date is eastern time minus 4 hours just to ensure we stay within the same "day" after midnight on the east coast
 TODAYS_DATE_STR = helpers.get_todays_date_str(hours_offset=3)
-
-SUBREDDIT = "heatcss"
 
 def main(action: str) -> None:
     """Creates or updates the Around the League thread on the subreddit"""
@@ -57,8 +56,7 @@ def main(action: str) -> None:
                 title,
                 selftext=body,
                 send_replies=False,
-
-                # flair_id="29f18426-a10b-11e6-af2b-0ea571864a50",
+                flair_id="29f18426-a10b-11e6-af2b-0ea571864a50",
             )
             submission.mod.sticky()
             submission.mod.suggested_sort(sort="new")

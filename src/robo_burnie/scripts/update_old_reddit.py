@@ -5,9 +5,9 @@ import praw
 from nba_api.stats.endpoints import boxscoresummaryv2
 from nba_api.stats.library.parameters import Season
 
-from constants import TEAM_ID_TO_INFO
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from scripts import helpers
+from ..constants import TEAM_ID_TO_INFO
+from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+from .. import helpers
 
 
 def main() -> None:
@@ -19,10 +19,10 @@ def main() -> None:
         user_agent="Game Bot by BobbaGanush87",
         username="RoboBurnie",
     )
-    subreddit = reddit.subreddit("heat")
+    subreddit = reddit.subreddit(SUBREDDIT)
     sidebar = subreddit.wiki["config/sidebar"]
 
-    updated_sidebar_text = update_standings(sidebar, "MIA")
+    updated_sidebar_text = update_standings(sidebar, TEAM)
     updated_sidebar_text = update_schedule(updated_sidebar_text, "heat")
 
     sidebar.edit(content=updated_sidebar_text)

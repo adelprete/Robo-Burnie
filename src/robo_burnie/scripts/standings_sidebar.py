@@ -3,10 +3,10 @@ import sys
 
 import praw
 
-from constants import TEAM_ID_TO_INFO
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from scripts import helpers
-from settings import TEAM
+from ..constants import TEAM_ID_TO_INFO
+from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+from .. import helpers
+from ..settings import TEAM, SUBREDDIT
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     )
 
     # Find standings widget
-    widgets = reddit.subreddit("heat").widgets
+    widgets = reddit.subreddit(SUBREDDIT).widgets
     standings_widget = None
     for widget in widgets.sidebar:
         if widget.shortName.lower() == "standings":
