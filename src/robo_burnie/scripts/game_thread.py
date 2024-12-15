@@ -5,9 +5,10 @@ from typing import Tuple
 
 import praw
 
-from constants import TEAM_ID_TO_INFO, TEAM_TRI_TO_INFO
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from scripts import _helpers
+from ..constants import TEAM_ID_TO_INFO, TEAM_TRI_TO_INFO
+from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+from .. import _helpers
+from ..settings import TEAM, SUBREDDIT
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -18,8 +19,7 @@ logging.basicConfig(
 
 
 def main(action: str) -> None:
-
-    todays_game = _helpers.get_todays_game_v2(team="MIA")
+    todays_game = _helpers.get_todays_game_v2(team=TEAM)
 
     if todays_game == {}:
         logging.info("No Game Today")
@@ -27,7 +27,7 @@ def main(action: str) -> None:
         logging.info("Game hasn't started yet")
 
         # Generate the details of our post
-        title, self_text = generate_post_details(todays_game, "MIA")
+        title, self_text = _generate_post_details(todays_game, TEAM)
 
         reddit = praw.Reddit(
             client_id=CLIENT_ID,
@@ -36,13 +36,13 @@ def main(action: str) -> None:
             user_agent="Game Bot by BobbaGanush87",
             username="RoboBurnie",
         )
-        subreddit = reddit.subreddit("heat")
+        subreddit = reddit.subreddit(SUBREDDIT)
 
         if action == "create":
             create_game_thread(subreddit, title, self_text)
 
 
-def generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
+def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
 
     cdn_game_data = _helpers.get_game_from_cdn_endpoint(todays_game["game_id"])
     tv_channels = get_tv_broadcasters(cdn_game_data, team)

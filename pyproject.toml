@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "robo-burnie"
+version = "0.1.0"
+description = "A bot for the subreddit r/heat"
+authors = ["Anthony Delprete <adelprete87@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "~3.11"
+requests = "^2.32.3"
+praw = "^7.8.1"
+nba_api = "^1.6.1"
+dateutils = "^0.6.12"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.10.0"
+isort = "^5.13.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
