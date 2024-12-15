@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "robo-burnie"
+name = "robo_burnie"
 version = "0.1.0"
 description = "A bot for the subreddit r/heat"
 authors = ["Anthony Delprete <adelprete87@gmail.com>"]

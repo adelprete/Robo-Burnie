@@ -5,10 +5,10 @@ import praw
 from nba_api.stats.endpoints import boxscoresummaryv2
 from nba_api.stats.library.parameters import Season
 
-from ..constants import TEAM_ID_TO_INFO
-from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from .. import _helpers
-from ..settings import TEAM, SUBREDDIT
+from robo_burnie.constants import TEAM_ID_TO_INFO
+from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+from robo_burnie import _helpers
+from robo_burnie.settings import TEAM, SUBREDDIT
 
 
 def main() -> None:
@@ -58,7 +58,7 @@ def update_standings(sidebar, team_to_highlight):
         "###Roster" + sidebar.content_md.split("###Roster", 1)[1]
     )
 
-    standings = helpers.get_todays_standings()
+    standings = _helpers.get_todays_standings()
     standings_markdown = "##[Standings](http://espn.go.com/nba/standings/_/group/3)\n\n||Team|W|L|PCT|\n|:--:|:--|:--:|:--:|:--:|\n"
 
     count = 1
@@ -123,7 +123,7 @@ def update_schedule(sidebar_text: str, team_name: str) -> str:
     )
 
     today = datetime.today()
-    seasons_games = helpers.get_full_team_schedule(team_name)
+    seasons_games = _helpers.get_full_team_schedule(team_name)
 
     # Find where we are in the schedule
     for index, game in enumerate(seasons_games):

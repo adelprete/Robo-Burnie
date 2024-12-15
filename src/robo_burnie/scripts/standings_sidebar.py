@@ -3,10 +3,10 @@ import sys
 
 import praw
 
-from constants import TEAM_ID_TO_INFO
-from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from scripts import _helpers
-from settings import TEAM
+from robo_burnie.constants import TEAM_ID_TO_INFO
+from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+from robo_burnie import _helpers
+from robo_burnie.settings import TEAM
 
 logging.basicConfig(
     stream=sys.stdout,
