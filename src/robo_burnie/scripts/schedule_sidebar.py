@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os.path
 import sys
@@ -12,9 +14,9 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
 
-from ..constants import TEAM_ID_TO_INFO
-from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from ..scripts import helpers
+from robo_burnie.constants import TEAM_ID_TO_INFO
+from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+from robo_burnie import _helpers
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -28,7 +30,7 @@ SCOPES = ["https://www.googleapis.com/auth/calendar"]
 CALENDAR_ID = "heat.sub.mods@gmail.com"
 
 
-def get_google_calendar_service() -> Resource:
+def _get_google_calendar_service() -> Resource:
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -51,7 +53,7 @@ def get_google_calendar_service() -> Resource:
     return service
 
 
-def build_events_map(service: Resource, current_time: str) -> dict:
+def _build_events_map(service: Resource, current_time: str) -> dict:
     events_list = (
         service.events().list(calendarId=CALENDAR_ID, timeMin=current_time).execute()
     )
@@ -62,12 +64,12 @@ def build_events_map(service: Resource, current_time: str) -> dict:
     return events_map
 
 
-def main() -> None:
-    all_games = helpers.get_full_team_schedule("heat")
+def _main() -> None:
+    all_games = _helpers.get_full_team_schedule("heat")
 
-    service = get_google_calendar_service()
+    service = _get_google_calendar_service()
     current_time = datetime.now(tz=pytz.utc).isoformat()
-    events_map = build_events_map(service, current_time)
+    events_map = _build_events_map(service, current_time)
 
     for game in all_games:
         # skip games in the past
@@ -132,4 +134,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    _main()

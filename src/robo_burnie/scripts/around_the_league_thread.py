@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import sys
 from datetime import datetime, timedelta
@@ -5,9 +7,9 @@ from typing import Tuple
 
 import praw
 
-from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from .. import _helpers
-from ..settings import TEAM, SUBREDDIT
+from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+from robo_burnie import _helpers
+from robo_burnie.settings import TEAM, SUBREDDIT
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -20,7 +22,7 @@ logging.basicConfig(
 # Today's date is eastern time minus 4 hours just to ensure we stay within the same "day" after midnight on the east coast
 TODAYS_DATE_STR = _helpers.get_todays_date_str(hours_offset=3)
 
-def main(action: str) -> None:
+def _main(action: str) -> None:
     """Creates or updates the Around the League thread on the subreddit"""
 
     todays_game = _helpers.get_todays_game_v2(team=TEAM)
@@ -93,4 +95,4 @@ def _generate_post_body(todays_games: dict) -> str:
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    _main(sys.argv[1])

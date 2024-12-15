@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import sys
 
@@ -17,7 +19,7 @@ logging.basicConfig(
 
 
 # The css on the custom widget gets saved as a giant string
-css_str = """
+_css_str = """
 p {
 font-family: Arial, Helvetica, sans-serif;
 padding: 14px;
@@ -89,7 +91,7 @@ def _main() -> None:
 
     if standings_widget:
         standings_markdown = _build_standings_markdown()
-        standings_widget.mod.update(text=standings_markdown, css=css_str)
+        standings_widget.mod.update(text=standings_markdown, css=_css_str)
         logging.info("standings updated")
 
 def _get_standings_widget(reddit_client: praw.Reddit) -> praw.models.Widget | None:

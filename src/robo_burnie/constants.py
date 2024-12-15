@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 TEAM_TRI_TO_INFO = {
     "ATL": {"full_name": "Atlanta Hawks", "reddit": "/r/AtlantaHawks"},
     "BOS": {"full_name": "Boston Celtics", "reddit": "/r/BostonCeltics"},

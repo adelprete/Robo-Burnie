@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from datetime import datetime
 
@@ -11,7 +13,7 @@ from robo_burnie import _helpers
 from robo_burnie.settings import TEAM, SUBREDDIT
 
 
-def main() -> None:
+def _main() -> None:
 
     reddit = praw.Reddit(
         client_id=CLIENT_ID,
@@ -23,14 +25,14 @@ def main() -> None:
     subreddit = reddit.subreddit(SUBREDDIT)
     sidebar = subreddit.wiki["config/sidebar"]
 
-    updated_sidebar_text = update_standings(sidebar, TEAM)
-    updated_sidebar_text = update_schedule(updated_sidebar_text, "heat")
+    updated_sidebar_text = _update_standings(sidebar, TEAM)
+    updated_sidebar_text = _update_schedule(updated_sidebar_text, "heat")
 
     sidebar.edit(content=updated_sidebar_text)
     logging.info("Old sidebar updated")
 
 
-def update_standings(sidebar, team_to_highlight):
+def _update_standings(sidebar, team_to_highlight):
     """
     ||Team|W|L|PCT|
     |:--:|:--|:--:|:--:|:--:|
@@ -99,7 +101,7 @@ def update_standings(sidebar, team_to_highlight):
     return updated_sidebar_txt
 
 
-def update_schedule(sidebar_text: str, team_name: str) -> str:
+def _update_schedule(sidebar_text: str, team_name: str) -> str:
     """
     |Date|Matchup|Score|
     |:--:|:--:|:--:|
@@ -137,8 +139,8 @@ def update_schedule(sidebar_text: str, team_name: str) -> str:
             datetime.strptime(game["gameDateEst"][:-10], "%Y-%m-%d").strftime("%a, %b %d")
             + f" *{game['gameStatusText']}*"
         )
-        opponent_display_str = get_opponent_display_str(game, team_name)
-        score_display_str = get_score_display_str(game, team_name)
+        opponent_display_str = _get_opponent_display_str(game, team_name)
+        score_display_str = _get_score_display_str(game, team_name)
 
         game_markdown = "|{}|{}|{}|".format(
             date_display_text, opponent_display_str, score_display_str
@@ -154,7 +156,7 @@ def update_schedule(sidebar_text: str, team_name: str) -> str:
     return updated_sidebar_txt
 
 
-def get_opponent_display_str(game: dict, team: str) -> str:
+def _get_opponent_display_str(game: dict, team: str) -> str:
     if game["homeTeam"]["teamSlug"] == team:
         opponent_tricode = f'{game["awayTeam"]["teamTricode"]}'
         opponent_reddit = TEAM_ID_TO_INFO.get(str(game["awayTeam"]["teamId"]), {}).get("reddit", "")
@@ -164,7 +166,7 @@ def get_opponent_display_str(game: dict, team: str) -> str:
     return f"[{opponent_tricode}]({opponent_reddit})"
 
 
-def get_score_display_str(game: dict, team: str) -> str:
+def _get_score_display_str(game: dict, team: str) -> str:
     away_score = game["awayTeam"]["score"]
     home_score = game["homeTeam"]["score"]
 
@@ -178,4 +180,4 @@ def get_score_display_str(game: dict, team: str) -> str:
 
 
 if __name__ == "__main__":
-    main()
+    _main()

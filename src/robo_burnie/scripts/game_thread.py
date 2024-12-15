@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import sys
 from datetime import datetime
@@ -5,10 +7,10 @@ from typing import Tuple
 
 import praw
 
-from ..constants import TEAM_ID_TO_INFO, TEAM_TRI_TO_INFO
-from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from .. import _helpers
-from ..settings import TEAM, SUBREDDIT
+from robo_burnie.constants import TEAM_ID_TO_INFO, TEAM_TRI_TO_INFO
+from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+from robo_burnie import _helpers
+from robo_burnie.settings import TEAM, SUBREDDIT
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -18,7 +20,7 @@ logging.basicConfig(
 )
 
 
-def main(action: str) -> None:
+def _main(action: str) -> None:
     todays_game = _helpers.get_todays_game_v2(team=TEAM)
 
     if todays_game == {}:
@@ -39,14 +41,14 @@ def main(action: str) -> None:
         subreddit = reddit.subreddit(SUBREDDIT)
 
         if action == "create":
-            create_game_thread(subreddit, title, self_text)
+            _create_game_thread(subreddit, title, self_text)
 
 
 def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
 
     cdn_game_data = _helpers.get_game_from_cdn_endpoint(todays_game["game_id"])
-    tv_channels = get_tv_broadcasters(cdn_game_data, team)
-    radio_channels = get_radio_broadcasters(cdn_game_data, team)
+    tv_channels = _get_tv_broadcasters(cdn_game_data, team)
+    radio_channels = _get_radio_broadcasters(cdn_game_data, team)
 
     home_team = TEAM_ID_TO_INFO[todays_game["home_team_id"]]
     away_team = TEAM_ID_TO_INFO[todays_game["away_team_id"]]
@@ -112,7 +114,7 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
     return title, self_text
 
 
-def create_game_thread(subreddit: str, title: str, self_text: str) -> None:
+def _create_game_thread(subreddit: str, title: str, self_text: str) -> None:
     game_thread_exists = False
     for post in subreddit.hot(limit=10):
         if post.stickied and "[Game Thread]" in post.title:
@@ -145,7 +147,7 @@ def create_game_thread(subreddit: str, title: str, self_text: str) -> None:
     else:
         logging.info("Game thread already posted")
 
-def get_tv_broadcasters(game_data: dict, team: str):
+def _get_tv_broadcasters(game_data: dict, team: str):
     national_tv_broadcasters = []
     for broadcaster in game_data['broadcasters']['nationalTvBroadcasters']:
         national_tv_broadcasters.append(broadcaster['broadcasterAbbreviation'])
@@ -157,7 +159,7 @@ def get_tv_broadcasters(game_data: dict, team: str):
     
     return team_tv_broadcasters + national_tv_broadcasters
 
-def get_radio_broadcasters(game_data: dict, team: str):
+def _get_radio_broadcasters(game_data: dict, team: str):
     national_radio_broadcasters = []
     for broadcaster in game_data['broadcasters']['nationalRadioBroadcasters']:
         national_radio_broadcasters.append(broadcaster['broadcasterAbbreviation'])
@@ -170,4 +172,4 @@ def get_radio_broadcasters(game_data: dict, team: str):
     return team_radio_broadcasters + national_radio_broadcasters
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    _main(sys.argv[1])
