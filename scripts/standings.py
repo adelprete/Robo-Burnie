@@ -5,7 +5,7 @@ import praw
 
 from constants import TEAM_ID_TO_INFO
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from scripts import helpers
+from scripts import _helpers
 from settings import TEAM
 
 logging.basicConfig(
@@ -70,13 +70,13 @@ border-right: 0;
 """
 
 
-if __name__ == "__main__":
+def main() -> None:
     """
-    This script will update the standings on the Miami Heat 'new' reddit.
+    This script will update the standings on the sidbear on New Reddit.
     """
 
     # Connect to Reddit
-    reddit = praw.Reddit(
+    reddit_client = praw.Reddit(
         client_id=CLIENT_ID,
         client_secret=CLIENT_SECRET_KEY,
         password=BOT_PASSWORD,
@@ -85,35 +85,47 @@ if __name__ == "__main__":
     )
 
     # Find standings widget
-    widgets = reddit.subreddit("heat").widgets
+    standings_widget = get_standings_widget(reddit_client)
+
+    # Get latest standings from NBA api and build Markdown
+    if standings_widget:
+        standings_markdown = build_standings_markdown()
+
+        standings_widget.mod.update(text=standings_markdown, css=css_str)
+        logging.info("standings updated")
+
+def get_standings_widget(reddit_client: praw.Reddit) -> praw.models.Widget:
+    """Finds the standings widget and returns it"""
+    widgets = reddit_client.subreddit("heat").widgets
     standings_widget = None
     for widget in widgets.sidebar:
         if widget.shortName.lower() == "standings":
             standings_widget = widget
             break
+    return standings_widget
 
-    # Get latest standings from NBA api and build Markdown
-    if standings_widget:
-        standings = helpers.get_todays_standings()
-        standings_markdown = "STANDINGS\n\n| | Team | W | L | Pct |\n|--|--|--|--|--|"
-        
-        position = 1
-        for team in standings:
-            if team["Conference"] == "West":
-                continue
+def build_standings_markdown() -> str:
+    standings = _helpers.get_todays_standings()
+    standings_markdown = "STANDINGS\n\n| | Team | W | L | Pct |\n|--|--|--|--|--|"
+    
+    position = 1
+    for team in standings:
+        if team["Conference"] == "West":
+            continue
 
-            team_name = "{}".format(team["TeamName"])
-            if TEAM_ID_TO_INFO[str(team["TeamID"])]["tricode"] == TEAM:
-                team_name = "**{}**".format(team["TeamName"])
-            standing_markdown = "\n| {} |  {} | {} | {} | {}".format(
-                position,
-                team_name,
-                team["WINS"],
-                team["LOSSES"],
-                team["WinPCT"],
-            )
-            standings_markdown += standing_markdown
-            position += 1
+        team_name = "{}".format(team["TeamName"])
+        if TEAM_ID_TO_INFO[str(team["TeamID"])]["tricode"] == TEAM:
+            team_name = "**{}**".format(team["TeamName"])
+        standing_markdown = "\n| {} |  {} | {} | {} | {}".format(
+            position,
+            team_name,
+            team["WINS"],
+            team["LOSSES"],
+            team["WinPCT"],
+        )
+        standings_markdown += standing_markdown
+        position += 1
+    return standings_markdown
 
-        standings_widget.mod.update(text=standings_markdown, css=css_str)
-        logging.info("standings updated")
+if __name__ == "__main__":
+    main()
