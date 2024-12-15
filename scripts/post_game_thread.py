@@ -8,7 +8,7 @@ from typing import Tuple
 import praw
 
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from scripts import helpers
+from scripts import _helpers
 from settings import TEAM, TEAM_INFO
 
 
@@ -18,7 +18,7 @@ def generate_post_details(todays_game: dict) -> Tuple[str, str]:
     if todays_game["vTeam"]["triCode"] == TEAM:
         team_stats_key = "vTeam"
         opponent_stats_key = "hTeam"
-    boxscore = helpers.get_boxscore(todays_game["gameId"])
+    boxscore = _helpers.get_boxscore(todays_game["gameId"])
     reddit = praw.Reddit(
         client_id=CLIENT_ID,
         client_secret=CLIENT_SECRET_KEY,
@@ -98,7 +98,7 @@ def generate_post_details(todays_game: dict) -> Tuple[str, str]:
 
 if __name__ == "__main__":
     while True:
-        todays_game = helpers.get_todays_game(hours_offset=5)
+        todays_game = _helpers.get_todays_game(hours_offset=5)
         if todays_game == {}:
             logging.info("No Game Today")
             break
@@ -112,7 +112,7 @@ if __name__ == "__main__":
             continue
 
         while todays_game["statusNum"] in [2, 3]:
-            todays_game = helpers.get_todays_game(hours_offset=5)
+            todays_game = _helpers.get_todays_game(hours_offset=5)
             # Check if game is over
             if todays_game["statusNum"] == 3 or (
                 todays_game["period"]["current"] >= 4

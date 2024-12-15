@@ -7,7 +7,7 @@ import praw
 
 from constants import TEAM_ID_TO_INFO, TEAM_TRI_TO_INFO
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from scripts import helpers
+from scripts import _helpers
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -19,7 +19,7 @@ logging.basicConfig(
 
 def main(action: str) -> None:
 
-    todays_game = helpers.get_todays_game_v2(team="MIA")
+    todays_game = _helpers.get_todays_game_v2(team="MIA")
 
     if todays_game == {}:
         logging.info("No Game Today")
@@ -44,7 +44,7 @@ def main(action: str) -> None:
 
 def generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
 
-    cdn_game_data = helpers.get_game_from_cdn_endpoint(todays_game["game_id"])
+    cdn_game_data = _helpers.get_game_from_cdn_endpoint(todays_game["game_id"])
     tv_channels = get_tv_broadcasters(cdn_game_data, team)
     radio_channels = get_radio_broadcasters(cdn_game_data, team)
 
@@ -104,7 +104,7 @@ def generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
         start_time,
         ", ".join(tv_channels),
         ", ".join(radio_channels),
-        helpers.get_game_link(todays_game),
+        _helpers.get_game_link(todays_game),
     )
 
     self_text = self_text + table
@@ -170,5 +170,4 @@ def get_radio_broadcasters(game_data: dict, team: str):
     return team_radio_broadcasters + national_radio_broadcasters
 
 if __name__ == "__main__":
-
     main(sys.argv[1])

@@ -7,7 +7,7 @@ import praw
 
 from constants import TEAM_ID_TO_INFO
 from private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from scripts import helpers
+from scripts import _helpers
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -18,14 +18,14 @@ logging.basicConfig(
 
 
 # Today's date is eastern time minus 4 hours just to ensure we stay within the same "day" after midnight on the east coast
-TODAYS_DATE_STR = helpers.get_todays_date_str(hours_offset=3)
+TODAYS_DATE_STR = _helpers.get_todays_date_str(hours_offset=3)
 
 SUBREDDIT = "heatcss"
 
 
 def main(action: str) -> None:
 
-    todays_games = helpers.get_todays_games(hours_offset=3)
+    todays_games = _helpers.get_todays_games(hours_offset=3)
     breakpoint()
     if not todays_games:
         logging.info("No Games Today")
