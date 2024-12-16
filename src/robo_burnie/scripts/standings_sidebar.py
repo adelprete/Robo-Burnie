@@ -5,9 +5,9 @@ import sys
 
 import praw
 
+from robo_burnie import _helpers
 from robo_burnie.constants import TEAM_ID_TO_INFO
 from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from robo_burnie import _helpers
 from robo_burnie.settings import TEAM
 
 logging.basicConfig(
@@ -55,7 +55,7 @@ border-collapse: collapse;
 }
 
 table td{
-border: .5px solid black; 
+border: .5px solid black;
 }
 table tr:first-child th {
 border-top: 0;
@@ -94,6 +94,7 @@ def _main() -> None:
         standings_widget.mod.update(text=standings_markdown, css=_css_str)
         logging.info("standings updated")
 
+
 def _get_standings_widget(reddit_client: praw.Reddit) -> praw.models.Widget | None:
     """Finds the standings widget and returns it"""
     widgets = reddit_client.subreddit("heat").widgets
@@ -101,11 +102,12 @@ def _get_standings_widget(reddit_client: praw.Reddit) -> praw.models.Widget | No
         if widget.shortName.lower() == "standings":
             return widget
 
+
 def _build_standings_markdown() -> str:
     """Grabs the latest nba standings and builds the markdown of those standings"""
     standings = _helpers.get_todays_standings()
     standings_markdown = "| | Team | W | L | Pct |\n|--|--|--|--|--|"
-    
+
     for position, team in enumerate(standings, start=1):
         if team["Conference"] == "West":
             continue
@@ -121,8 +123,9 @@ def _build_standings_markdown() -> str:
             team["WinPCT"],
         )
         standings_markdown += team_standing_markdown
-        
+
     return standings_markdown
+
 
 if __name__ == "__main__":
     _main()

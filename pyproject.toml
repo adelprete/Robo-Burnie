@@ -18,6 +18,9 @@ google-auth-oauthlib = "0.4.6"
 black = "^24.10.0"
 isort = "^5.13.2"
 
+[tool.isort]
+profile = "black"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

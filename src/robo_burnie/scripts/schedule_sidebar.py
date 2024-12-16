@@ -14,9 +14,9 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
 
+from robo_burnie import _helpers
 from robo_burnie.constants import TEAM_ID_TO_INFO
 from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from robo_burnie import _helpers
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -82,7 +82,7 @@ def _main() -> None:
         else:
             summary = "@" + TEAM_ID_TO_INFO[str(game["homeTeam"]["teamId"])]["nickname"]
 
-        if game["seriesText"].lower() == 'preseason':
+        if game["seriesText"].lower() == "preseason":
             summary += " (preseason)"
 
         # convert time to eastern

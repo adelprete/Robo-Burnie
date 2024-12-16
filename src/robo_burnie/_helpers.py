@@ -13,21 +13,22 @@ __all__ = [
     "get_game_link",
 ]
 from datetime import datetime, timedelta
-from typing import List, NamedTuple
+from typing import List
 
 import requests
-from nba_api.stats.endpoints import (boxscoresummaryv2, leaguestandings,
-                                     scoreboardv2)
+from nba_api.stats.endpoints import boxscoresummaryv2, leaguestandings, scoreboardv2
 from nba_api.stats.library.parameters import GameDate
 
 from robo_burnie.constants import TEAM_ID_TO_INFO
 from robo_burnie.settings import TEAM
+
 
 def create_dictionary_list(headers, rows):
     result = []
     for row in rows:
         result.append(dict(zip(headers, row)))
     return result
+
 
 def get_todays_standings():
     result = leaguestandings.LeagueStandings().get_dict()["resultSets"][0]
@@ -39,20 +40,24 @@ def get_todays_standings():
 
 def get_full_team_schedule(team_name: str) -> List[dict]:
     schedule = requests.get(
-        f"https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
+        "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
     ).json()
 
     teams_games = []
     for game_date in schedule["leagueSchedule"]["gameDates"]:
         for game in game_date["games"]:
-            if game["homeTeam"]["teamSlug"] == team_name or game["awayTeam"]["teamSlug"] == team_name:
+            if (
+                game["homeTeam"]["teamSlug"] == team_name
+                or game["awayTeam"]["teamSlug"] == team_name
+            ):
                 teams_games.append(game)
 
     return teams_games
 
+
 def get_game_from_cdn_endpoint(game_id: str) -> dict:
     schedule = requests.get(
-        f"https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
+        "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
     ).json()
 
     for game_date in schedule["leagueSchedule"]["gameDates"]:
@@ -62,12 +67,15 @@ def get_game_from_cdn_endpoint(game_id: str) -> dict:
 
     return {}
 
+
 def get_current_datetime() -> datetime:
     """Returns"""
     return datetime.now() - timedelta(hours=4)
 
+
 def get_todays_date_str(hours_offset=0):
     return (datetime.now() - timedelta(hours=hours_offset)).strftime("%Y%m%d")
+
 
 def get_todays_games() -> list[dict]:
     """Get all games for the day"""
@@ -76,7 +84,9 @@ def get_todays_games() -> list[dict]:
     scoreboard = scoreboardv2.ScoreboardV2(game_date=game_date).get_dict()["resultSets"]
 
     # Walkthrough each scoreboard section and build out the data for each game
-    game_headers = create_dictionary_list(scoreboard[0]["headers"], scoreboard[0]["rowSet"])
+    game_headers = create_dictionary_list(
+        scoreboard[0]["headers"], scoreboard[0]["rowSet"]
+    )
     for game in game_headers:
         games[game["GAME_ID"]] = {
             "game_status_text": game["GAME_STATUS_TEXT"],
@@ -85,22 +95,28 @@ def get_todays_games() -> list[dict]:
             "live_period_time_bcast": game["LIVE_PERIOD_TIME_BCAST"],
             "home_team_id": game["HOME_TEAM_ID"],
             "visitor_team_id": game["VISITOR_TEAM_ID"],
-            "natl_tv_broadcaster_abbreviation": game["NATL_TV_BROADCASTER_ABBREVIATION"],
+            "natl_tv_broadcaster_abbreviation": game[
+                "NATL_TV_BROADCASTER_ABBREVIATION"
+            ],
         }
 
-    line_scores = create_dictionary_list(scoreboard[1]["headers"], scoreboard[1]["rowSet"])
+    line_scores = create_dictionary_list(
+        scoreboard[1]["headers"], scoreboard[1]["rowSet"]
+    )
     for line_score in line_scores:
         team_prefix = "home"
         if line_score["TEAM_ID"] == games[line_score["GAME_ID"]]["visitor_team_id"]:
             team_prefix = "visitor"
 
-        games[line_score["GAME_ID"]].update({
-            f"{team_prefix}_name": line_score["TEAM_NAME"],
-            f"{team_prefix}_abbreviation": line_score["TEAM_ABBREVIATION"],
-            f"{team_prefix}_city_name": line_score["TEAM_CITY_NAME"],
-            f"{team_prefix}_wins_losses": line_score["TEAM_WINS_LOSSES"],
-            f"{team_prefix}_pts": line_score["PTS"],
-        })
+        games[line_score["GAME_ID"]].update(
+            {
+                f"{team_prefix}_name": line_score["TEAM_NAME"],
+                f"{team_prefix}_abbreviation": line_score["TEAM_ABBREVIATION"],
+                f"{team_prefix}_city_name": line_score["TEAM_CITY_NAME"],
+                f"{team_prefix}_wins_losses": line_score["TEAM_WINS_LOSSES"],
+                f"{team_prefix}_pts": line_score["PTS"],
+            }
+        )
 
     return games
 

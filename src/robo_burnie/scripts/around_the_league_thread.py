@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import logging
 import sys
-from datetime import datetime, timedelta
-from typing import Tuple
+from datetime import datetime
 
 import praw
 
-from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from robo_burnie import _helpers
-from robo_burnie.settings import TEAM, SUBREDDIT
+from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+from robo_burnie.settings import SUBREDDIT, TEAM
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -21,6 +20,7 @@ logging.basicConfig(
 
 # Today's date is eastern time minus 4 hours just to ensure we stay within the same "day" after midnight on the east coast
 TODAYS_DATE_STR = _helpers.get_todays_date_str(hours_offset=3)
+
 
 def _main(action: str) -> None:
     """Creates or updates the Around the League thread on the subreddit"""
@@ -81,13 +81,20 @@ def _main(action: str) -> None:
 
 def _generate_post_body(todays_games: dict) -> str:
     body = (
-
-        f"| **Away** | **Score** | **Home** | **TV** |\n"
-        f"| :---: | :---: | :---: | :---: |\n"
+        "| **Away** | **Score** | **Home** | **TV** |\n"
+        "| :---: | :---: | :---: | :---: |\n"
     )
     for game_id, game in todays_games.items():
-        score = f"{game['visitor_pts']} - {game['home_pts']}" if game['home_pts'] and game['visitor_pts'] else None
-        status = f"({game['game_status_text'].strip()})" if score else game['game_status_text'].strip()
+        score = (
+            f"{game['visitor_pts']} - {game['home_pts']}"
+            if game["home_pts"] and game["visitor_pts"]
+            else None
+        )
+        status = (
+            f"({game['game_status_text'].strip()})"
+            if score
+            else game["game_status_text"].strip()
+        )
         game_details = f"| {game['visitor_name']} | {score or ''} {status} | {game['home_name']} | {game['natl_tv_broadcaster_abbreviation'] or ''} |\n"
         body += game_details
 

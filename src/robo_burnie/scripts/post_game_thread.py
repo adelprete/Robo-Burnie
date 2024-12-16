@@ -2,15 +2,13 @@ from __future__ import annotations
 
 import logging
 import random
-import sys
 import time
-from datetime import datetime, timedelta
 from typing import Tuple
 
 import praw
 
-from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from .. import _helpers
+from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 from ..settings import TEAM, TEAM_INFO
 
 
@@ -21,13 +19,6 @@ def generate_post_details(todays_game: dict) -> Tuple[str, str]:
         team_stats_key = "vTeam"
         opponent_stats_key = "hTeam"
     boxscore = _helpers.get_boxscore(todays_game["gameId"])
-    reddit = praw.Reddit(
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET_KEY,
-        password=BOT_PASSWORD,
-        user_agent="Game Bot by BobbaGanush87",
-        username="RoboBurnie",
-    )
 
     # Grab general score information
     team_score = todays_game[team_stats_key]["score"]
@@ -99,6 +90,14 @@ def generate_post_details(todays_game: dict) -> Tuple[str, str]:
 
 
 if __name__ == "__main__":
+    reddit = praw.Reddit(
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET_KEY,
+        password=BOT_PASSWORD,
+        user_agent="Game Bot by BobbaGanush87",
+        username="RoboBurnie",
+    )
+
     while True:
         todays_game = _helpers.get_todays_game(hours_offset=5)
         if todays_game == {}:
