@@ -40,7 +40,7 @@ def _main(action: str) -> None:
             client_id=CLIENT_ID,
             client_secret=CLIENT_SECRET_KEY,
             password=BOT_PASSWORD,
-            user_agent="Game Bot by BobbaGanush87",
+            user_agent="Game Bot for r/heat",
             username="RoboBurnie",
         )
 

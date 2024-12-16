@@ -1,11 +1,11 @@
 # Robo-Burnie
-Scripts for the reddit bot 'RoboBurnie' to update the r/heat subreddit
+Scripts for the reddit bot 'RoboBurnie' to update the r/heat subreddit.
 
 All are ran via cronjobs at different times
 
-* **game_thread.py (inactive)** - Every Day at 8 am this script checks if a game is playing today.  If so it creates a game thread and unstickys any post game threads.
+* **game_thread.py** - This script runs daily and checks if a game is playing today.  If so, it creates a game thread and unpins any post game threads.
 * **post_game_thread.py (inactive)** - Once a Miami Heat game is finished, a new thread will be created for Post Game discussion.
-This script is ran once a day at 1pm and finishes once the game for that day is over.  If a game is found and it ends, the game thread is unstickied.
-* **schedule.py** - Everyday at 5 am r/heat's google calendar is updated with the season's schedule.
-* **standings.py** - Every day at 4am EST this script is ran to update the Eastern Conference Standings on the sidebar of the New Reddit version of this subreddit.
-* **around_the_league_thread.py** - Creates the the [Around the League] thread in the morning at 8am.  Updates the scores every 10 mins.
+* **schedule_sidebar.py** - This script runs daily and updates the google calendar with the latest schedule and also syncs the calendar with the Schedule widget on the sidebar.
+* **standings_sidebar.py** - This script runs daily and updates the Standings widget on the sidebar.
+* **update_old_sidebar.py** - This script runs daily and makes sure that the standings and schedule on the old reddit sidebar is up to date.
+* **around_the_league_thread.py** - This script runs daily and creates the [Around the League] thread if there arent any Heat games.  This thread lists out each game playing that day and updates the scores every 10 mins.
