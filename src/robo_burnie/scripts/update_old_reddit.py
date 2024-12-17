@@ -6,9 +6,9 @@ from datetime import datetime
 import praw
 
 from robo_burnie import _helpers
-from robo_burnie.constants import TEAM_ID_TO_INFO
+from robo_burnie._constants import TEAM_ID_TO_INFO
+from robo_burnie._settings import SUBREDDIT, TEAM
 from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from robo_burnie.settings import SUBREDDIT, TEAM
 
 
 def _main() -> None:

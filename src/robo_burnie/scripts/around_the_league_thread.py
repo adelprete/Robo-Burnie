@@ -7,8 +7,8 @@ from datetime import datetime
 import praw
 
 from robo_burnie import _helpers
+from robo_burnie._settings import SUBREDDIT, TEAM
 from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from robo_burnie.settings import SUBREDDIT, TEAM
 
 logging.basicConfig(
     stream=sys.stdout,

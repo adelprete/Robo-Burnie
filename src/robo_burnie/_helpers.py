@@ -19,8 +19,8 @@ import requests
 from nba_api.stats.endpoints import boxscoresummaryv2, leaguestandings, scoreboardv2
 from nba_api.stats.library.parameters import GameDate
 
-from robo_burnie.constants import TEAM_ID_TO_INFO
-from robo_burnie.settings import TEAM
+from robo_burnie._constants import TEAM_ID_TO_INFO
+from robo_burnie._settings import TEAM
 
 
 def create_dictionary_list(headers, rows):

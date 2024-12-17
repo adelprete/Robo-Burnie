@@ -8,8 +8,8 @@ from typing import Tuple
 import praw
 
 from .. import _helpers
+from .._settings import TEAM, TEAM_INFO
 from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
-from ..settings import TEAM, TEAM_INFO
 
 
 def generate_post_details(todays_game: dict) -> Tuple[str, str]:

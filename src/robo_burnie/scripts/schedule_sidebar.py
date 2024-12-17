@@ -16,7 +16,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
 
 from robo_burnie import _helpers
-from robo_burnie.constants import TEAM_ID_TO_INFO
+from robo_burnie._constants import TEAM_ID_TO_INFO
 from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 logging.basicConfig(
