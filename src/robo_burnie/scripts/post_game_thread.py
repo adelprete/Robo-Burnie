@@ -14,7 +14,7 @@ from ..private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 def generate_post_details(todays_game: dict) -> Tuple[str, str]:
     team_stats_key = "hTeam"
-    opponent_stats_key = "vTeam"
+    opponent_stats_key = "vTeamm"
     if todays_game["vTeam"]["triCode"] == TEAM:
         team_stats_key = "vTeam"
         opponent_stats_key = "hTeam"
