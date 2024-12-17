@@ -17,66 +17,38 @@ logging.basicConfig(
     datefmt="%d-%b-%y %H:%M:%S",
 )
 
-
 # Today's date is eastern time minus 4 hours just to ensure we stay within the same "day" after midnight on the east coast
 TODAYS_DATE_STR = _helpers.get_todays_date_str(hours_offset=3)
 
 
 def _main(action: str) -> None:
     """Creates or updates the Around the League thread on the subreddit"""
+    reddit = praw.Reddit(
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET_KEY,
+        password=BOT_PASSWORD,
+        user_agent="Game Bot for r/heat",
+        username="RoboBurnie",
+    )
+    subreddit = reddit.subreddit(SUBREDDIT)
 
-    todays_game = _helpers.get_todays_game_v2(team=TEAM)
-    if todays_game:
+    team_game_today = _helpers.get_todays_game_v2(team=TEAM)
+    if team_game_today:
         logging.info(f"{TEAM} Game Today.  Skipping Around the League Thread")
+        _unsticky_old_around_the_league_thread(subreddit)
         return
 
     todays_games = _helpers.get_todays_games()
-
     if not todays_games:
-        logging.info("No Games Today")
+        logging.info("No Games Today. Skipping Around the League Thread")
+        _unsticky_old_around_the_league_thread(subreddit)
         return
     else:
-        reddit = praw.Reddit(
-            client_id=CLIENT_ID,
-            client_secret=CLIENT_SECRET_KEY,
-            password=BOT_PASSWORD,
-            user_agent="Game Bot for r/heat",
-            username="RoboBurnie",
-        )
-
-        title = "[Around the League] Discuss today's NBA news and games"
         body = _generate_post_body(todays_games)
-
-        subreddit = reddit.subreddit(SUBREDDIT)
-
         if action == "create":
-            # Unsticky old Around the League Thread (if applicable)
-            for post in subreddit.hot(limit=10):
-                if post.stickied and "[Around the League]" in post.title:
-                    post_date = datetime.fromtimestamp(post.created_utc).strftime(
-                        "%Y%m%d"
-                    )
-                    if post_date != TODAYS_DATE_STR:
-                        post.mod.sticky(False)
-                    break
-
-            submission = subreddit.submit(
-                title,
-                selftext=body,
-                send_replies=False,
-                flair_id="29f18426-a10b-11e6-af2b-0ea571864a50",
-            )
-            submission.mod.sticky()
-            submission.mod.suggested_sort(sort="new")
-            logging.info("Around the League thread posted")
-
+            _create_around_the_league_thread(subreddit, body)
         elif action == "update":
-            for post in subreddit.new(limit=35):
-                if "[Around the League]" in post.title:
-                    post.edit(body)
-                    post.save()
-                    break
-            logging.info("Around the League thread updated")
+            _update_around_the_league_thread(subreddit, body)
 
 
 def _generate_post_body(todays_games: dict) -> str:
@@ -99,6 +71,46 @@ def _generate_post_body(todays_games: dict) -> str:
         body += game_details
 
     return body
+
+
+def _unsticky_old_around_the_league_thread(subreddit: praw.models.Subreddit) -> None:
+    """Unstickies the any Around the League thread that was not made today"""
+    for post in subreddit.hot(limit=10):
+        if post.stickied and "[Around the League]" in post.title:
+            post_date = datetime.fromtimestamp(post.created_utc).strftime("%Y%m%d")
+            if post_date != TODAYS_DATE_STR:
+                post.mod.sticky(False)
+
+
+def _create_around_the_league_thread(
+    subreddit: praw.models.Subreddit, body: str
+) -> None:
+    """Creates the Around the League thread"""
+    # Unsticky old Around the League Thread (if applicable)
+    _unsticky_old_around_the_league_thread(subreddit)
+
+    title = "[Around the League] Discuss today's NBA news and games"
+    submission = subreddit.submit(
+        title,
+        selftext=body,
+        send_replies=False,
+        flair_id="29f18426-a10b-11e6-af2b-0ea571864a50",
+    )
+    submission.mod.sticky()
+    submission.mod.suggested_sort(sort="new")
+    logging.info("Around the League thread posted")
+
+
+def _update_around_the_league_thread(
+    subreddit: praw.models.Subreddit, body: str
+) -> None:
+    """Updates the Around the League thread"""
+    for post in subreddit.new(limit=35):
+        if "[Around the League]" in post.title:
+            post.edit(body)
+            post.save()
+            break
+    logging.info("Around the League thread updated")
 
 
 if __name__ == "__main__":

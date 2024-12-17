@@ -5,6 +5,7 @@ import os.path
 import sys
 import time
 from datetime import datetime, timedelta
+from typing import Any
 
 import praw
 import pytz
@@ -28,6 +29,15 @@ logging.basicConfig(
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 CALENDAR_ID = "heat.sub.mods@gmail.com"
+
+
+def _main() -> None:
+    """Updates the Google Calendar with the Heat's schedule and resyncs the schedule widget on Reddit"""
+    current_time = datetime.now(tz=pytz.utc).isoformat()
+    service = _get_google_calendar_service()
+    events_map = _build_events_map(service, current_time)
+    _update_google_calendar(service, current_time, events_map)
+    _sync_schedule_widget()
 
 
 def _get_google_calendar_service() -> Resource:
@@ -54,6 +64,7 @@ def _get_google_calendar_service() -> Resource:
 
 
 def _build_events_map(service: Resource, current_time: str) -> dict:
+    """Build a map of events in the calendar"""
     events_list = (
         service.events().list(calendarId=CALENDAR_ID, timeMin=current_time).execute()
     )
@@ -64,43 +75,15 @@ def _build_events_map(service: Resource, current_time: str) -> dict:
     return events_map
 
 
-def _main() -> None:
+def _update_google_calendar(service: Any, current_time: str, events_map: dict[Any]):
+    """Update the Google Calendar with the Heat's schedule"""
     all_games = _helpers.get_full_team_schedule("heat")
-
-    service = _get_google_calendar_service()
-    current_time = datetime.now(tz=pytz.utc).isoformat()
-    events_map = _build_events_map(service, current_time)
-
     for game in all_games:
         # skip games in the past
         if game["gameDateTimeUTC"] < current_time:
             continue
 
-        # Make our summary
-        if game["homeTeam"]["teamSlug"] == "heat":
-            summary = TEAM_ID_TO_INFO[str(game["awayTeam"]["teamId"])]["nickname"]
-        else:
-            summary = "@" + TEAM_ID_TO_INFO[str(game["homeTeam"]["teamId"])]["nickname"]
-
-        if game["seriesText"].lower() == "preseason":
-            summary += " (preseason)"
-
-        # convert time to eastern
-        utc_datetime = parse(game["gameDateTimeUTC"])
-        eastern_datetime = utc_datetime.replace(tzinfo=pytz.utc).astimezone(
-            pytz.timezone("US/Eastern")
-        )
-        eastern_start_str = eastern_datetime.isoformat()
-        eastern_end_str = (
-            eastern_datetime + timedelta(hours=2) + timedelta(minutes=30)
-        ).isoformat()
-
-        event_data = {
-            "id": game["gameId"],
-            "summary": summary,
-            "start": {"dateTime": eastern_start_str, "timeZone": "America/New_York"},
-            "end": {"dateTime": eastern_end_str, "timeZone": "America/New_York"},
-        }
+        event_data = _generate_event_data(game)
         if game["gameId"] not in events_map:
             service.events().insert(calendarId=CALENDAR_ID, body=event_data).execute()
         else:
@@ -108,10 +91,53 @@ def _main() -> None:
                 calendarId=CALENDAR_ID, eventId=game["gameId"], body=event_data
             ).execute()
 
-        # cause of quotas
+        # Brief pause to avoid rate limits
         time.sleep(0.5)
 
     logging.info("Calender Updated")
+
+
+def _generate_event_data(game: dict) -> dict:
+    """Generate the event data for the game"""
+    event_summary = _generate_event_summary(game)
+    start, end = _generate_event_start_end_times(game)
+    event_data = {
+        "id": game["gameId"],
+        "summary": event_summary,
+        "start": {"dateTime": start, "timeZone": "America/New_York"},
+        "end": {"dateTime": end, "timeZone": "America/New_York"},
+    }
+    return event_data
+
+
+def _generate_event_summary(game: dict) -> str:
+    """Generate the summary for the event"""
+    if game["homeTeam"]["teamSlug"] == "heat":
+        summary = TEAM_ID_TO_INFO[str(game["awayTeam"]["teamId"])]["nickname"]
+    else:
+        summary = "@" + TEAM_ID_TO_INFO[str(game["homeTeam"]["teamId"])]["nickname"]
+
+    if game["seriesText"].lower() == "preseason":
+        summary += " (preseason)"
+
+    return summary
+
+
+def _generate_event_start_end_times(game: dict) -> tuple[str, str]:
+    """Generate the start and end times for the event"""
+    utc_datetime = parse(game["gameDateTimeUTC"])
+    eastern_datetime = utc_datetime.replace(tzinfo=pytz.utc).astimezone(
+        pytz.timezone("US/Eastern")
+    )
+    eastern_start_str = eastern_datetime.isoformat()
+    eastern_end_str = (
+        eastern_datetime + timedelta(hours=2) + timedelta(minutes=30)
+    ).isoformat()
+
+    return eastern_start_str, eastern_end_str
+
+
+def _sync_schedule_widget() -> None:
     # Connect to Reddit
     reddit = praw.Reddit(
         client_id=CLIENT_ID,
@@ -130,7 +156,7 @@ def _main() -> None:
             break
 
     schedule_widget.mod.update(requiresSync=True)
-    logging.info("Calendar widget synced")
+    logging.info("Schedule widget synced")
 
 
 if __name__ == "__main__":

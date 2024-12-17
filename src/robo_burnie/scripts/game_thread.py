@@ -28,7 +28,6 @@ def _main(action: str) -> None:
     elif todays_game.get("status_id") == 1:
         logging.info("Game hasn't started yet")
 
-        # Generate the details of our post
         title, self_text = _generate_post_details(todays_game, TEAM)
 
         reddit = praw.Reddit(
