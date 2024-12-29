@@ -13,6 +13,7 @@ nba_api = "^1.6.1"
 dateutils = "^0.6.12"
 google-api-python-client = "2.26.1"
 google-auth-oauthlib = "0.4.6"
+numpy = "~1.25.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
