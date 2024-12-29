@@ -40,7 +40,7 @@ def _main(action: str) -> None:
         subreddit = reddit.subreddit(SUBREDDIT)
 
         if action == "create":
-            _create_game_thread(subreddit, title, self_text)
+            _submit_post(subreddit, title, self_text)
 
 
 def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
@@ -113,7 +113,7 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
     return title, self_text
 
 
-def _create_game_thread(subreddit: str, title: str, self_text: str) -> None:
+def _submit_post(subreddit: str, title: str, self_text: str) -> None:
     game_thread_exists = False
     for post in subreddit.hot(limit=10):
         if post.stickied and "[Game Thread]" in post.title:

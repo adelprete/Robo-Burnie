@@ -2,6 +2,7 @@ from __future__ import annotations
 
 __all__ = [
     "get_todays_standings",
+    "get_boxscore",
     "get_full_team_schedule",
     "get_game_from_cdn_endpoint",
     "get_current_datetime",
@@ -11,11 +12,13 @@ __all__ = [
     "get_todays_game",
     "get_boxscore",
     "get_game_link",
+    "gameclock_to_seconds",
 ]
 from datetime import datetime, timedelta
 from typing import List
 
 import requests
+from nba_api.live.nba.endpoints import boxscore
 from nba_api.stats.endpoints import boxscoresummaryv2, leaguestandings, scoreboardv2
 from nba_api.stats.library.parameters import GameDate
 
@@ -36,6 +39,11 @@ def get_todays_standings():
     header = result["headers"]
     standings = [dict(zip(header, sublist)) for sublist in result["rowSet"]]
     return standings
+
+
+def get_boxscore(game_id: str) -> dict:
+    box_score = boxscore.BoxScore(game_id).get_dict()["game"]
+    return box_score
 
 
 def get_full_team_schedule(team_name: str) -> List[dict]:
@@ -206,17 +214,14 @@ def get_todays_game(team=TEAM):
     return todays_game
 
 
-def get_boxscore(gameid):
-    """Get boxscore for specific game"""
-    today = datetime.utcnow() - timedelta(hours=5)
-    boxscore = requests.get(
-        "https://data.nba.net/data/10s/prod/v1/{}{}{}/{}_boxscore.json".format(
-            today.strftime("%Y"), today.strftime("%m"), today.strftime("%d"), gameid
-        )
-    ).json()
-    return boxscore
-
-
 def get_game_link(game):
     """Create box score link for specific game"""
     return f"https://www.nba.com/game/{TEAM_ID_TO_INFO[game['away_team_id']]['tricode']}-vs-{TEAM_ID_TO_INFO[game['home_team_id']]['tricode']}-{game['game_id']}/box-score#box-score"
+
+
+def gameclock_to_seconds(game_clock: str) -> float:
+    """Converts game clock string 'PT00M00.00S' to seconds"""
+    minutes, seconds = game_clock[2:].split("M")
+    seconds = seconds[:-1]
+    time_left = int(minutes) * 60 + float(seconds)
+    return time_left
