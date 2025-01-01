@@ -44,6 +44,8 @@ def _main():
     )
     if not _post_game_thread_exists(reddit):
         _submit_post(reddit, todays_game["game_id"])
+    else:
+        logging.debug("Post Game Thread already exists")
 
 
 def _wait_for_game_to_start(game_id: str) -> None:
@@ -95,18 +97,22 @@ def _sleep_for_awhile(boxscore: dict) -> None:
     time_left = _helpers.gameclock_to_seconds(boxscore["gameClock"])
     if boxscore["period"] >= 4 and boxscore["gameStatus"] == 2 and not time_left:
         """if the game is in the 4th quarter and the clock has no value, the game might be over"""
-        logging.info("Game might have ended")
+        logging.info(f"Game might have ended: {time_left}")
         time.sleep(3)
     elif boxscore["period"] >= 4 and time_left < 40:
         """if the game is in the 4th quarter and the clock is less than 40 seconds, the game is almost over"""
-        logging.info("Game is almost over")
+        logging.info(f"Game is almost over: {time_left}")
         time.sleep(10)
+    elif boxscore["period"] >= 4:
+        """if the game is in the 4th quarter and its not almost over"""
+        logging.info(f"Game is in the 4th quarter: {time_left}")
+        time.sleep(40)
     elif boxscore["period"] < 4:
         """if the game is not in the 4th quarter, wait for a longer period"""
         logging.info("Game is not in the 4th quarter yet")
         time.sleep(720)  # 12 mins
     else:
-        logging.info("Game is not over yet")
+        logging.info(f"Game is not over yet: {time_left}")
         time.sleep(90)
 
 
