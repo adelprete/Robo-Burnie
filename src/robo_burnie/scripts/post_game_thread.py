@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import logging
 import random
 import time
@@ -9,8 +10,15 @@ from typing import Tuple
 import praw
 
 from robo_burnie import _helpers
+from robo_burnie._file_lock import file_lock
 from robo_burnie._settings import SUBREDDIT, TEAM
 from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 SUBREDDIT = "heatcss"
 _POST_GAME_FLAIR_ID = "aa3be42a-c182-11e3-b8ca-12313b0e88c2"
@@ -25,10 +33,7 @@ class GameStatus(Enum):
 def _main():
     todays_game = _helpers.get_todays_game_v2(team=TEAM)
     if todays_game == {}:
-        logging.info("No Game Today")
-        return
-    if todays_game["status_id"] == GameStatus.NOT_STARTED.value:
-        logging.info("Game hasn't started yet")
+        logger.debug("No Game Today")
         return
 
     _wait_for_game_to_start(todays_game["game_id"])
@@ -45,7 +50,7 @@ def _main():
     if not _post_game_thread_exists(reddit):
         _submit_post(reddit, todays_game["game_id"])
     else:
-        logging.debug("Post Game Thread already exists")
+        logger.debug("Post Game Thread already exists")
 
 
 def _wait_for_game_to_start(game_id: str) -> None:
@@ -56,7 +61,9 @@ def _wait_for_game_to_start(game_id: str) -> None:
             GameStatus.POST_GAME.value,
         ]:
             return
-        time.sleep(5400)  # checks again in an hour and a half
+        logger.info("Game hasn't started yet. Sleeping...")
+        #TODO: dynamically adjust sleep time based on time until game starts
+        time.sleep(7200) # 2 hours
 
 
 def _wait_for_game_to_end(game_id: str) -> None:
@@ -70,7 +77,7 @@ def _wait_for_game_to_end(game_id: str) -> None:
                 <= 3
             ):
                 # Sometimes close games can be misreported as over when the final play is still being reviewed
-                logging.info(
+                logger.info(
                     "Game was close. Double checking that the game actually ended."
                 )
                 double_check_close_game = False
@@ -97,22 +104,22 @@ def _sleep_for_awhile(boxscore: dict) -> None:
     time_left = _helpers.gameclock_to_seconds(boxscore["gameClock"])
     if boxscore["period"] >= 4 and boxscore["gameStatus"] == 2 and not time_left:
         """if the game is in the 4th quarter and the clock has no value, the game might be over"""
-        logging.info(f"Game might have ended: {time_left}")
+        logger.debug(f"Game might have ended: {time_left}")
         time.sleep(3)
     elif boxscore["period"] >= 4 and time_left < 40:
         """if the game is in the 4th quarter and the clock is less than 40 seconds, the game is almost over"""
-        logging.info(f"Game is almost over: {time_left}")
+        logger.debug(f"Game is almost over: {time_left}")
         time.sleep(10)
     elif boxscore["period"] >= 4:
         """if the game is in the 4th quarter and its not almost over"""
-        logging.info(f"Game is in the 4th quarter: {time_left}")
+        logger.debug(f"Game is in the 4th quarter: {time_left}")
         time.sleep(40)
     elif boxscore["period"] < 4:
         """if the game is not in the 4th quarter, wait for a longer period"""
-        logging.info("Game is not in the 4th quarter yet")
+        logger.debug("Game is not in the 4th quarter yet")
         time.sleep(720)  # 12 mins
     else:
-        logging.info(f"Game is not over yet: {time_left}")
+        logger.debug(f"Game is not over yet: {time_left}")
         time.sleep(90)
 
 
@@ -128,9 +135,9 @@ def _submit_post(reddit: praw.Reddit, game_id: str) -> None:
     boxscore = _helpers.get_boxscore(game_id)
     title, selftext = _generate_post_details(boxscore)
     _submit_post_game_thread(reddit, title, selftext)
-    logging.info("Post Game Thread posted")
+    logger.info("Post Game Thread posted")
     _unsticky_game_thread(reddit)
-    logging.info("Unstickied Game Thread")
+    logger.info("Unstickied Game Thread")
 
 
 def _generate_post_details(boxscore: dict) -> Tuple[str, str]:
@@ -218,10 +225,9 @@ def _unsticky_game_thread(reddit: praw.Reddit) -> None:
             post.mod.sticky(False)
             break
 
-
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-    )
-    _main()
+    try:
+        with file_lock("post_game_thread"):
+            _main()
+    except IOError:
+        logger.debug("Another instance of post_game_thread is already running")
