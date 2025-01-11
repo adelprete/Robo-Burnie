@@ -4,6 +4,7 @@ import logging
 import random
 import time
 from enum import Enum
+from json import JSONDecodeError
 from typing import Tuple
 
 import praw
@@ -36,7 +37,11 @@ def _main():
         logger.debug("No Game Today")
         return
 
-    _wait_for_game_to_start(todays_game["game_id"])
+    try:
+        _wait_for_game_to_start(todays_game["game_id"])
+    except JSONDecodeError as e:
+        logger.error(f"Game hasnt started yet: {e}")
+        return
 
     _wait_for_game_to_end(todays_game["game_id"])
 
