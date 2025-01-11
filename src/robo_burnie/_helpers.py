@@ -13,6 +13,7 @@ __all__ = [
     "get_boxscore",
     "get_game_link",
     "gameclock_to_seconds",
+    "get_espn_boxscore_link",
 ]
 from datetime import datetime, timedelta
 from typing import List
@@ -225,3 +226,20 @@ def gameclock_to_seconds(game_clock: str) -> float:
     seconds = seconds[:-1]
     time_left = int(minutes) * 60 + float(seconds)
     return time_left
+
+
+def get_espn_boxscore_link(
+    away_team_tri_code: str, home_team_tri_code: str
+) -> str | None:
+    scoreboard_url = (
+        "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
+    )
+    scoreboard = requests.get(scoreboard_url).json()
+    for event in scoreboard["events"]:
+        if (
+            event["competitions"][0]["competitors"][0]["team"]["abbreviation"]
+            == away_team_tri_code
+            and event["competitions"][0]["competitors"][1]["team"]["abbreviation"]
+            == home_team_tri_code
+        ):
+            return event["links"][0]["href"]

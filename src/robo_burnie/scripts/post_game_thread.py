@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 import logging
 import random
 import time
@@ -8,6 +7,7 @@ from enum import Enum
 from typing import Tuple
 
 import praw
+from requests.exceptions import HTTPError
 
 from robo_burnie import _helpers
 from robo_burnie._file_lock import file_lock
@@ -62,8 +62,8 @@ def _wait_for_game_to_start(game_id: str) -> None:
         ]:
             return
         logger.info("Game hasn't started yet. Sleeping...")
-        #TODO: dynamically adjust sleep time based on time until game starts
-        time.sleep(7200) # 2 hours
+        # TODO: dynamically adjust sleep time based on time until game starts
+        time.sleep(7200)  # 2 hours
 
 
 def _wait_for_game_to_end(game_id: str) -> None:
@@ -161,11 +161,9 @@ def _generate_post_details(boxscore: dict) -> Tuple[str, str]:
 
     title = _generate_post_title(boxscore, team_stats_key, opponent_stats_key)
 
-    selftext = (
-        "Box Score:https://www.nba.com/game"
-        f"/{boxscore['awayTeam']['teamTricode']}-vs-{boxscore['homeTeam']['teamTricode']}"
-        f"/{boxscore['gameId']}/boxscore#boxscore"
-    )
+    box_score_link = _get_boxscore_link(boxscore)
+
+    selftext = f"Box Score: {box_score_link}"
     selftext += "\n\n"
     selftext += points_leader_text
     selftext += "\n\n"
@@ -187,6 +185,25 @@ def _get_stats_leader_text(stat: str, players: list[dict]) -> str:
     }
     statline_text = f"**{stat_leader['name']}**: {stat_leader['statistics'][stat]} {abbreviated_stat_map[stat]}"
     return statline_text
+
+
+def _get_boxscore_link(boxscore: dict) -> str:
+    away_team_tricode = boxscore["awayTeam"]["teamTricode"]
+    home_team_tricode = boxscore["homeTeam"]["teamTricode"]
+    # ESPN's boxscore link creates a better embed preview image on reddit posts.
+    # Lets try to grab that first and fallback to the NBA's boxscore link.
+    try:
+        box_score_link = _helpers.get_espn_boxscore_link(
+            away_team_tricode, home_team_tricode
+        )
+    except HTTPError as e:
+        logger.warning(f"Failed to get ESPN box score link: {e}")
+    if not box_score_link:
+        box_score_link = (
+            "https://www.nba.com/game/"
+            f"{away_team_tricode}-vs-{home_team_tricode}-{boxscore['gameId']}/boxscore#boxscore"
+        )
+    return box_score_link
 
 
 def _generate_post_title(
@@ -224,6 +241,7 @@ def _unsticky_game_thread(reddit: praw.Reddit) -> None:
         if post.stickied and "[Game Thread]" in post.title:
             post.mod.sticky(False)
             break
+
 
 if __name__ == "__main__":
     try:
