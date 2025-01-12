@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 __all__ = [
     "get_todays_standings",
     "get_boxscore",
@@ -14,6 +16,7 @@ __all__ = [
     "get_game_link",
     "gameclock_to_seconds",
     "get_espn_boxscore_link",
+    "is_script_enabled",
 ]
 from datetime import datetime, timedelta
 from typing import List
@@ -243,3 +246,11 @@ def get_espn_boxscore_link(
             == home_team_tri_code
         ):
             return event["links"][0]["href"]
+
+
+def is_script_enabled(script_name: str) -> bool:
+    """Check if a script is enabled in config.json"""
+    with open("src/robo_burnie/config.json", "r") as file:
+        config = json.load(file)
+        return config["scripts"].get(script_name, {}).get("enabled", False)
+    return False
