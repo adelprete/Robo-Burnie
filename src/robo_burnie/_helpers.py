@@ -237,9 +237,9 @@ def get_espn_boxscore_link(
     scoreboard = requests.get(scoreboard_url).json()
     for event in scoreboard["events"]:
         if (
-            event["competitions"][0]["competitors"][0]["team"]["abbreviation"]
+            event["competitions"][0]["competitors"][1]["team"]["abbreviation"]
             == away_team_tri_code
-            and event["competitions"][0]["competitors"][1]["team"]["abbreviation"]
+            and event["competitions"][0]["competitors"][0]["team"]["abbreviation"]
             == home_team_tri_code
         ):
             return event["links"][0]["href"]
