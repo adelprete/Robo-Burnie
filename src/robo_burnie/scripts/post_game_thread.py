@@ -249,8 +249,12 @@ def _unsticky_game_thread(reddit: praw.Reddit) -> None:
 
 
 if __name__ == "__main__":
-    try:
-        with file_lock("post_game_thread"):
-            _main()
-    except IOError:
-        logger.debug("Another instance of post_game_thread is already running")
+
+    if _helpers.is_script_enabled("post_game_thread"):
+        try:
+            with file_lock("post_game_thread"):
+                _main()
+        except IOError:
+            logger.debug("Another instance of post_game_thread is already running")
+    else:
+        logger.debug("post_game_thread is disabled")
