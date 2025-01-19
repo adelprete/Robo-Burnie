@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import random
 import time
+from datetime import datetime
 from enum import Enum
 from json import JSONDecodeError
 from typing import Tuple
@@ -198,8 +199,9 @@ def _get_boxscore_link(boxscore: dict) -> str:
     # ESPN's boxscore link creates a better embed preview image on reddit posts.
     # Lets try to grab that first and fallback to the NBA's boxscore link.
     try:
+        game_time = datetime.strptime(boxscore["gameTimeLocal"], "%Y-%m-%dT%H:%M:%S%z")
         box_score_link = _helpers.get_espn_boxscore_link(
-            away_team_tricode, home_team_tricode
+            away_team_tricode, home_team_tricode, game_time
         )
     except HTTPError as e:
         logger.warning(f"Failed to get ESPN box score link: {e}")

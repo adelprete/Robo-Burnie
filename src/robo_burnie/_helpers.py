@@ -232,11 +232,13 @@ def gameclock_to_seconds(game_clock: str) -> float:
 
 
 def get_espn_boxscore_link(
-    away_team_tri_code: str, home_team_tri_code: str
+    away_team_tri_code: str, home_team_tri_code: str, date: datetime = None
 ) -> str | None:
     scoreboard_url = (
         "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
     )
+    if date:
+        scoreboard_url += f"?dates={date.strftime('%Y%m%d')}"
     scoreboard = requests.get(scoreboard_url).json()
     for event in scoreboard["events"]:
         if (
