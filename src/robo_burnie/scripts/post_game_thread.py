@@ -9,7 +9,6 @@ from json import JSONDecodeError
 from typing import Tuple
 
 import praw
-from requests.exceptions import HTTPError
 
 from robo_burnie import _helpers
 from robo_burnie._file_lock import file_lock
@@ -167,7 +166,12 @@ def _generate_post_details(boxscore: dict) -> Tuple[str, str]:
 
     title = _generate_post_title(boxscore, team_stats_key, opponent_stats_key)
 
-    box_score_link = _get_boxscore_link(boxscore)
+    box_score_link = _helpers._get_boxscore_link(
+        away_tricode=boxscore["awayTeam"]["teamTricode"],
+        home_tricode=boxscore["homeTeam"]["teamTricode"],
+        game_id=boxscore["gameId"],
+        game_time=datetime.strptime(boxscore["gameTimeLocal"], "%Y-%m-%dT%H:%M:%S%z"),
+    )
 
     selftext = f"Box Score: {box_score_link}"
     selftext += "\n\n"
@@ -191,26 +195,6 @@ def _get_stats_leader_text(stat: str, players: list[dict]) -> str:
     }
     statline_text = f"**{stat_leader['name']}**: {stat_leader['statistics'][stat]} {abbreviated_stat_map[stat]}"
     return statline_text
-
-
-def _get_boxscore_link(boxscore: dict) -> str:
-    away_team_tricode = boxscore["awayTeam"]["teamTricode"]
-    home_team_tricode = boxscore["homeTeam"]["teamTricode"]
-    # ESPN's boxscore link creates a better embed preview image on reddit posts.
-    # Lets try to grab that first and fallback to the NBA's boxscore link.
-    try:
-        game_time = datetime.strptime(boxscore["gameTimeLocal"], "%Y-%m-%dT%H:%M:%S%z")
-        box_score_link = _helpers.get_espn_boxscore_link(
-            away_team_tricode, home_team_tricode, game_time
-        )
-    except HTTPError as e:
-        logger.warning(f"Failed to get ESPN box score link: {e}")
-    if not box_score_link:
-        box_score_link = (
-            "https://www.nba.com/game/"
-            f"{away_team_tricode}-vs-{home_team_tricode}-{boxscore['gameId']}/boxscore#boxscore"
-        )
-    return box_score_link
 
 
 def _generate_post_title(

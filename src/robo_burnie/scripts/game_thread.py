@@ -105,7 +105,9 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
         start_time,
         ", ".join(tv_channels),
         ", ".join(radio_channels),
-        _helpers.get_game_link(todays_game),
+        _helpers.get_boxscore_link(
+            away_team["tricode"], home_team["tricode"], todays_game["game_id"]
+        ),
     )
 
     self_text = self_text + table

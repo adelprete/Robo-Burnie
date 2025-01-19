@@ -13,7 +13,7 @@ __all__ = [
     "get_todays_game_v2",
     "get_todays_game",
     "get_boxscore",
-    "get_game_link",
+    "get_boxscore_link",
     "gameclock_to_seconds",
     "get_espn_boxscore_link",
     "is_script_enabled",
@@ -26,7 +26,6 @@ from nba_api.live.nba.endpoints import boxscore
 from nba_api.stats.endpoints import boxscoresummaryv2, leaguestandings, scoreboardv2
 from nba_api.stats.library.parameters import GameDate
 
-from robo_burnie._constants import TEAM_ID_TO_INFO
 from robo_burnie._settings import TEAM
 
 
@@ -218,9 +217,19 @@ def get_todays_game(team=TEAM):
     return todays_game
 
 
-def get_game_link(game):
+def get_boxscore_link(
+    away_tricode: str, home_tricode: str, game_id: str, game_time: datetime = None
+):
     """Create box score link for specific game"""
-    return f"https://www.nba.com/game/{TEAM_ID_TO_INFO[game['away_team_id']]['tricode']}-vs-{TEAM_ID_TO_INFO[game['home_team_id']]['tricode']}-{game['game_id']}/box-score#box-score"
+    espn_box_score_link = get_espn_boxscore_link(
+        away_team_tri_code=away_tricode,
+        home_team_tri_code=home_tricode,
+        date=game_time,
+    )
+    if espn_box_score_link:
+        return espn_box_score_link
+    else:
+        return f"https://www.nba.com/game/{away_tricode}-vs-{home_tricode}-{game_id}/boxscore#boxscore"
 
 
 def gameclock_to_seconds(game_clock: str) -> float:
