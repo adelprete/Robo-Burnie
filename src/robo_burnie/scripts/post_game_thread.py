@@ -166,7 +166,7 @@ def _generate_post_details(boxscore: dict) -> Tuple[str, str]:
 
     title = _generate_post_title(boxscore, team_stats_key, opponent_stats_key)
 
-    box_score_link = _helpers._get_boxscore_link(
+    box_score_link = _helpers.get_boxscore_link(
         away_tricode=boxscore["awayTeam"]["teamTricode"],
         home_tricode=boxscore["homeTeam"]["teamTricode"],
         game_id=boxscore["gameId"],

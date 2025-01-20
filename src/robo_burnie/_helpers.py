@@ -243,6 +243,14 @@ def gameclock_to_seconds(game_clock: str) -> float:
 def get_espn_boxscore_link(
     away_tricode: str, home_tricode: str, date: datetime = None
 ) -> str | None:
+
+    # account for weird tricodes in ESPNs api.
+    # TODO: Move this check to a proper method. There will probably be more weirdness to handle.
+    if away_tricode == "SAS":
+        away_tricode = "SA"
+    elif home_tricode == "SAS":
+        home_tricode = "SA"
+
     scoreboard_url = (
         "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
     )
