@@ -5,3 +5,4 @@ roboburnie-calendar-331d1e99bf92.json
 venv
 __pycache__
 .coverage
+.config.json

@@ -1,7 +1,0 @@
-{
-    "scripts": {
-        "post_game_thread": {
-            "enabled": true
-        }
-    }
-}

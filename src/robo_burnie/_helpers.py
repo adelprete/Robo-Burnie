@@ -245,7 +245,7 @@ def get_espn_boxscore_link(
 ) -> str | None:
 
     # account for weird tricodes in ESPNs api.
-    # TODO: Move this check to a proper method. There will probably be more weirdness to handle.
+    # TODO: Move this check to a proper method. There will probably be more weirdness like this to handle.
     if away_tricode == "SAS":
         away_tricode = "SA"
     elif home_tricode == "SAS":
@@ -268,8 +268,13 @@ def get_espn_boxscore_link(
 
 
 def is_script_enabled(script_name: str) -> bool:
-    """Check if a script is enabled in config.json"""
-    with open("src/robo_burnie/config.json", "r") as file:
-        config = json.load(file)
-        return config["scripts"].get(script_name, {}).get("enabled", False)
+    """Check if a script is enabled in .config.json if it exists"""
+    try:
+        with open("src/robo_burnie/.config.json", "r") as file:
+            config = json.load(file)
+            return config["scripts"].get(script_name, {}).get("enabled", False)
+    except FileNotFoundError:
+        with open("src/robo_burnie/default_config.json", "r") as file:
+            config = json.load(file)
+            return config["scripts"].get(script_name, {}).get("enabled", False)
     return False
