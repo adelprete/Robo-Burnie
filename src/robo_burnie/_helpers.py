@@ -222,8 +222,8 @@ def get_boxscore_link(
 ):
     """Create box score link for specific game"""
     espn_box_score_link = get_espn_boxscore_link(
-        away_team_tri_code=away_tricode,
-        home_team_tri_code=home_tricode,
+        away_tricode=away_tricode,
+        home_tricode=home_tricode,
         date=game_time,
     )
     if espn_box_score_link:
@@ -241,7 +241,7 @@ def gameclock_to_seconds(game_clock: str) -> float:
 
 
 def get_espn_boxscore_link(
-    away_team_tri_code: str, home_team_tri_code: str, date: datetime = None
+    away_tricode: str, home_tricode: str, date: datetime = None
 ) -> str | None:
     scoreboard_url = (
         "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
@@ -252,9 +252,9 @@ def get_espn_boxscore_link(
     for event in scoreboard["events"]:
         if (
             event["competitions"][0]["competitors"][1]["team"]["abbreviation"]
-            == away_team_tri_code
+            == away_tricode
             and event["competitions"][0]["competitors"][0]["team"]["abbreviation"]
-            == home_team_tri_code
+            == home_tricode
         ):
             return event["links"][0]["href"]
 
