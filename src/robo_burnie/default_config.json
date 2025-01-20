@@ -1,0 +1,12 @@
+{
+    "scripts": {
+        "post_game_thread": {
+            "enabled": false,
+            "default_enabled": false
+        },
+        "reset_config": {
+            "enabled": true,
+            "default_enabled": true
+        }
+    }
+}
