@@ -241,7 +241,7 @@ def gameclock_to_seconds(game_clock: str) -> float:
 
 
 def get_espn_boxscore_link(
-    away_tricode: str, home_tricode: str, date: datetime = None
+    away_tricode: str, home_tricode: str, date: datetime
 ) -> str | None:
 
     # account for weird tricodes in ESPNs api.
@@ -251,11 +251,7 @@ def get_espn_boxscore_link(
     elif home_tricode == "SAS":
         home_tricode = "SA"
 
-    scoreboard_url = (
-        "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
-    )
-    if date:
-        scoreboard_url += f"?dates={date.strftime('%Y%m%d')}"
+    scoreboard_url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date.strftime('%Y%m%d')}"
     scoreboard = requests.get(scoreboard_url).json()
     for event in scoreboard["events"]:
         if (

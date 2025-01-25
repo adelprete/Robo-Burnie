@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Tuple
 
 import praw
@@ -64,9 +64,9 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
     home_loss = todays_game["home_team_losses"]
 
     # Get Date information
-    today = datetime.utcnow()
-    month = today.strftime("%m")
-    day = today.strftime("%d")
+    today_datetime = datetime.now(timezone.utc)
+    month = today_datetime.strftime("%m")
+    day = today_datetime.strftime("%d")
     start_time = todays_game["status_text"]
 
     title = "[Game Thread] {} ({}-{}) @ {} ({}-{}) - {}/{} {}".format(
@@ -106,7 +106,10 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
         ", ".join(tv_channels),
         ", ".join(radio_channels),
         _helpers.get_boxscore_link(
-            away_team["tricode"], home_team["tricode"], todays_game["game_id"]
+            away_team["tricode"],
+            home_team["tricode"],
+            todays_game["game_id"],
+            today_datetime,
         ),
     )
 

@@ -81,31 +81,24 @@ def test_get_boxscore_link(
 
 
 @pytest.mark.parametrize(
-    "away_tricode, home_tricode, expected_link",
+    "away_tricode, home_tricode, game_time, expected_link",
     [
-        ("PHX", "WSH", "https://www.espn.com/nba/game?gameId=401705139"),
-        ("WSH", "PHX", None),
-    ],
-)
-@pytest.mark.parametrize(
-    "game_time",
-    [
-        datetime.now(timezone.utc),
-        None,
+        (
+            "PHX",
+            "WSH",
+            datetime.now(timezone.utc),
+            "https://www.espn.com/nba/game?gameId=401705139",
+        ),
+        ("WSH", "PHX", datetime.now(timezone.utc), None),
     ],
 )
 def test_get_espn_boxscore_link(
-    away_tricode, home_tricode, expected_link, game_time, espn_scoreboard_response
+    away_tricode, home_tricode, game_time, expected_link, espn_scoreboard_response
 ):
     with patch("robo_burnie._helpers.requests.get") as mock_requests_get:
         mock_requests_get.return_value.json.return_value = espn_scoreboard_response
         result = get_espn_boxscore_link(away_tricode, home_tricode, game_time)
-        if game_time:
-            mock_requests_get.assert_called_once_with(
-                f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={game_time.strftime('%Y%m%d')}"
-            )
-        else:
-            mock_requests_get.assert_called_once_with(
-                "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
-            )
+        mock_requests_get.assert_called_once_with(
+            f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={game_time.strftime('%Y%m%d')}"
+        )
         assert result == expected_link
