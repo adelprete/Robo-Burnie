@@ -69,7 +69,8 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
     day = today_datetime.strftime("%d")
     start_time = todays_game["status_text"]
 
-    title = "[Game Thread] {} ({}-{}) @ {} ({}-{}) - {}/{} {}".format(
+    title = "[Game Thread]{} {} ({}-{}) @ {} ({}-{}) - {}/{} {}".format(
+        " " + todays_game["game_label"] if todays_game["game_label"] else "",
         visitor_team_name,
         visitor_win,
         visitor_loss,
