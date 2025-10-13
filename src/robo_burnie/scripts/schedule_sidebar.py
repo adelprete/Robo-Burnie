@@ -119,8 +119,8 @@ def _generate_event_summary(game: dict) -> str:
     else:
         summary = "@" + TEAM_ID_TO_INFO[str(game["homeTeam"]["teamId"])]["nickname"]
 
-    if game["seriesText"].lower() == "preseason":
-        summary += " (preseason)"
+    if game["gameLabel"].lower():
+        summary += f" ({game['gameLabel']})"
 
     return summary
 

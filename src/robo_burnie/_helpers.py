@@ -23,7 +23,12 @@ from typing import List
 
 import requests
 from nba_api.live.nba.endpoints import boxscore
-from nba_api.stats.endpoints import boxscoresummaryv2, leaguestandings, scoreboardv2
+from nba_api.stats.endpoints import (
+    boxscoresummaryv2,
+    leaguestandings,
+    scheduleleaguev2,
+    scoreboardv2,
+)
 from nba_api.stats.library.parameters import GameDate
 
 from robo_burnie._settings import TEAM
@@ -84,8 +89,8 @@ def get_current_datetime() -> datetime:
     return datetime.now() - timedelta(hours=4)
 
 
-def get_todays_date_str(hours_offset=0):
-    return (datetime.now() - timedelta(hours=hours_offset)).strftime("%Y%m%d")
+def get_todays_date_str(hours_offset=0, format: str = "%Y%m%d") -> str:
+    return (datetime.now() - timedelta(hours=hours_offset)).strftime(format)
 
 
 def get_todays_games() -> list[dict]:
@@ -132,10 +137,43 @@ def get_todays_games() -> list[dict]:
     return games
 
 
-def get_todays_game_v2(team=TEAM):
+def get_todays_game_v3(team=TEAM) -> dict:
+    """Get today's game for specific team using scheduleleaguev2 endpoint
+    ScheduleLeagueV2 provides a gameLabel that other endpoints do not provide.
+    """
+    games = scheduleleaguev2.ScheduleLeagueV2().get_dict()["leagueSchedule"]
+    todays_date: str = get_todays_date_str(format="%m/%d/%Y")  # 10/02/2025
 
-    # Use scoreboardv2.ScoreboardV2 to check if we have a game today and get its game_id
-    # And then use boxscoresummaryv2.BoxScoreSummaryV2(game_id) to get details about that game
+    todays_game = {}
+    for game_date in games["gameDates"]:
+        if todays_date in game_date["gameDate"]:
+            for game in game_date["games"]:
+                if team in (
+                    game["homeTeam"]["teamTricode"],
+                    game["awayTeam"]["teamTricode"],
+                ):
+                    todays_game = {
+                        "game_id": game["gameId"],
+                        "game_label": game["gameLabel"],
+                        "status_id": game["gameStatus"],
+                        "status_text": game["gameStatusText"],
+                        "home_team_id": game["homeTeam"]["teamId"],
+                        "home_team_wins": game["homeTeam"]["wins"],
+                        "home_team_losses": game["homeTeam"]["losses"],
+                        "away_team_id": game["awayTeam"]["teamId"],
+                        "away_team_wins": game["awayTeam"]["wins"],
+                        "away_team_losses": game["awayTeam"]["losses"],
+                    }
+                    break
+
+    return todays_game
+
+
+def get_todays_game_v2(team=TEAM):
+    """Get today's game for specific team using scoreboardv2 and boxscoresummaryv2 endpoints
+
+    Faster than get_todays_game_v3 but does not provide gameLabel
+    """
 
     # Today's ScoreBoard
     games = scoreboardv2.ScoreboardV2().get_dict()["resultSets"][0]["rowSet"]

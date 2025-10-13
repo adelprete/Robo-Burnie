@@ -21,7 +21,7 @@ logging.basicConfig(
 
 
 def _main(action: str) -> None:
-    todays_game = _helpers.get_todays_game_v2(team=TEAM)
+    todays_game = _helpers.get_todays_game_v3(team=TEAM)
 
     if todays_game == {}:
         logging.info("No Game Today")
