@@ -11,8 +11,8 @@ requests = "^2.32.3"
 praw = "^7.8.1"
 nba_api = "^1.6.1"
 dateutils = "^0.6.12"
-google-api-python-client = "2.26.1"
-google-auth-oauthlib = "0.4.6"
+google-api-python-client = "^2.184"
+google-auth-oauthlib = "^1.2.0"
 numpy = "^2.1"
 
 [tool.poetry.group.dev.dependencies]
