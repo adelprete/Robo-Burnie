@@ -53,7 +53,7 @@ def _main(action: str) -> None:
 
 def _generate_post_body(todays_games: dict) -> str:
     body = (
-        "| **Away** | **Score** | **Home** | **TV** |\n"
+        "| **Away** | **Home** | **Score** | **TV** |\n"
         "| :---: | :---: | :---: | :---: |\n"
     )
     for game_id, game in todays_games.items():
@@ -67,7 +67,7 @@ def _generate_post_body(todays_games: dict) -> str:
             if score
             else game["game_status_text"].strip()
         )
-        game_details = f"| {game['visitor_name']} | {score or ''} {status} | {game['home_name']} | {game['natl_tv_broadcaster_abbreviation'] or ''} |\n"
+        game_details = f"| {game['visitor_name']} | {game['home_name']} | {score or ''} {status} | {game['natl_tv_broadcaster_abbreviation'] or ''} |\n"
         body += game_details
 
     return body
