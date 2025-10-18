@@ -67,7 +67,13 @@ def _generate_post_body(todays_games: dict) -> str:
             if score
             else game["game_status_text"].strip()
         )
-        game_details = f"| {game['visitor_name']} | {game['home_name']} | {score or ''} {status} | {game['natl_tv_broadcaster_abbreviation'] or ''} |\n"
+        natl_tv_broadcaster = (
+            game["natl_tv_broadcaster_abbreviation"]
+            if game["natl_tv_broadcaster_abbreviation"]
+            and game["natl_tv_broadcaster_abbreviation"] != "TBD"
+            else ""
+        )
+        game_details = f"| {game['visitor_name']} | {game['home_name']} | {score or ''} {status} | {natl_tv_broadcaster} |\n"
         body += game_details
 
     return body
