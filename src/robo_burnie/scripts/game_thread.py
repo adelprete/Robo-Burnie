@@ -49,8 +49,8 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
     tv_channels = _get_tv_broadcasters(cdn_game_data, team)
     radio_channels = _get_radio_broadcasters(cdn_game_data, team)
 
-    home_team = TEAM_ID_TO_INFO[todays_game["home_team_id"]]
-    away_team = TEAM_ID_TO_INFO[todays_game["away_team_id"]]
+    home_team = TEAM_ID_TO_INFO[str(todays_game["home_team_id"])]
+    away_team = TEAM_ID_TO_INFO[str(todays_game["away_team_id"])]
 
     # Grab general game information
     visitor_team_name = away_team["fullName"]
@@ -70,7 +70,7 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
     start_time = todays_game["status_text"]
 
     title = "[Game Thread]{} {} ({}-{}) @ {} ({}-{}) - {}/{} {}".format(
-        " " + todays_game["game_label"] if todays_game["game_label"] else "",
+        f" [{todays_game['game_label']}]" if todays_game["game_label"] else "",
         visitor_team_name,
         visitor_win,
         visitor_loss,
