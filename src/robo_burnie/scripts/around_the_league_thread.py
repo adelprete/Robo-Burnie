@@ -53,6 +53,7 @@ def _main(action: str) -> None:
 
 def _generate_post_body(todays_games: dict) -> str:
     body = (
+        "[nba.com](https://www.nba.com/schedule)\n\n"
         "| **Away** | **Home** | **Score** | **TV** |\n"
         "| :---: | :---: | :---: | :---: |\n"
     )
