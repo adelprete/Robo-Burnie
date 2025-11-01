@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 
 __all__ = [
     "get_todays_standings",
@@ -135,6 +136,64 @@ def get_todays_games() -> list[dict]:
         )
 
     return games
+
+
+def get_todays_games_cdn() -> list[dict]:
+
+    game_id_to_channels_map: dict = get_game_id_to_channels_map()
+
+    url = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        games = {}
+        for game in data.get("scoreboard", {}).get("games", []):
+            games[game["gameId"]] = {
+                "game_status_text": game["gameStatusText"],
+                "game_status_id": game["gameStatus"],
+                "live_period": game["period"],
+                "natl_tv_broadcaster_abbreviation": ", ".join(
+                    game_id_to_channels_map.get(game["gameId"], [])
+                ),
+                "home_team_id": game["homeTeam"]["teamId"],
+                "visitor_team_id": game["awayTeam"]["teamId"],
+                "home_name": game["homeTeam"]["teamName"],
+                "visitor_name": game["awayTeam"]["teamName"],
+                "home_abbreviation": game["homeTeam"]["teamTricode"],
+                "visitor_abbreviation": game["awayTeam"]["teamTricode"],
+                "home_city_name": game["homeTeam"]["teamCity"],
+                "visitor_city_name": game["awayTeam"]["teamCity"],
+                "home_pts": game["homeTeam"].get("score"),
+                "visitor_pts": game["awayTeam"].get("score"),
+            }
+    return games
+
+
+def get_game_id_to_channels_map() -> dict:
+    game_id_to_channels = defaultdict(set)
+    url = "https://cdn.nba.com/static/json/liveData/channels/v2/channels_00.json"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        for game in data.get("channels", {}).get("games", []):
+            for stream in game.get("streams", []):
+                if "nba tv" in stream.get("title").lower():
+                    game_id_to_channels[game["gameId"]].add("NBA TV")
+                elif "espn" in stream.get("title").lower():
+                    game_id_to_channels[game["gameId"]].add("ESPN")
+                elif "tnt" in stream.get("title").lower():
+                    game_id_to_channels[game["gameId"]].add("TNT")
+                elif "abc" in stream.get("title").lower():
+                    game_id_to_channels[game["gameId"]].add("ABC")
+                elif "nbc" in stream.get("title").lower():
+                    game_id_to_channels[game["gameId"]].add("NBC")
+                elif "peacock" in stream.get("title").lower():
+                    game_id_to_channels[game["gameId"]].add("Peacock")
+                elif "telemundo" in stream.get("title").lower():
+                    game_id_to_channels[game["gameId"]].add("Telemundo")
+                elif "amazon" in stream.get("title").lower():
+                    game_id_to_channels[game["gameId"]].add("Amazon Prime Video")
+    return game_id_to_channels
 
 
 def get_todays_game_v3(team=TEAM) -> dict:

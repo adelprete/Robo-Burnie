@@ -38,7 +38,7 @@ def _main(action: str) -> None:
         _unsticky_old_around_the_league_thread(subreddit)
         return
 
-    todays_games = _helpers.get_todays_games()
+    todays_games = _helpers.get_todays_games_cdn()
     if not todays_games:
         logging.info("No Games Today. Skipping Around the League Thread")
         _unsticky_old_around_the_league_thread(subreddit)
@@ -59,7 +59,7 @@ def _generate_post_body(todays_games: dict) -> str:
     for game_id, game in todays_games.items():
         score = (
             f"{game['visitor_pts']} - {game['home_pts']}"
-            if game["home_pts"] and game["visitor_pts"]
+            if game.get("home_pts") and game.get("visitor_pts")
             else None
         )
         status = (
