@@ -213,7 +213,11 @@ def get_todays_game_v3(team=TEAM) -> dict:
                 ):
                     todays_game = {
                         "game_id": game["gameId"],
-                        "game_label": game["gameLabel"],
+                        "game_label": (
+                            "NBA Cup"
+                            if "Emirates NBA Cup" in game["gameLabel"]
+                            else game["gameLabel"]
+                        ),
                         "status_id": game["gameStatus"],
                         "status_text": game["gameStatusText"],
                         "home_team_id": game["homeTeam"]["teamId"],

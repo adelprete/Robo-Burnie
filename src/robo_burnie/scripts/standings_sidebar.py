@@ -108,10 +108,11 @@ def _build_standings_markdown() -> str:
     standings = _helpers.get_todays_standings()
     standings_markdown = "| | Team | W | L | Pct |\n|--|--|--|--|--|"
 
-    for position, team in enumerate(standings, start=1):
+    position = 0
+    for team in standings:
         if team["Conference"] == "West":
             continue
-
+        position += 1
         team_name = "{}".format(team["TeamName"])
         if TEAM_ID_TO_INFO[str(team["TeamID"])]["tricode"] == TEAM:
             team_name = "**{}**".format(team["TeamName"])
