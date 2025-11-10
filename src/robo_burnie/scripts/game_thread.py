@@ -100,7 +100,7 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
         "| **Tip-Off Time** | {} |\n"
         "| **TV Broadcasts** | {} |\n"
         "| **Radio Broadcasts** | {} |\n"
-        "| **Game Info & Stats** | [nba.com]({}) |"
+        "| **Game Info & Stats** | [Box Score]({}) |"
     )
 
     table = table.format(

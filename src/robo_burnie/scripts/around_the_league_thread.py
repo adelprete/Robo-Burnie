@@ -74,7 +74,16 @@ def _generate_post_body(todays_games: dict) -> str:
             and game["natl_tv_broadcaster_abbreviation"] != "TBD"
             else ""
         )
-        game_details = f"| {game['visitor_name']} | {game['home_name']} | {score or ''} {status} | {natl_tv_broadcaster} |\n"
+        # Timberwolves name is too long and wraps on mobile
+        visitor_name = (
+            game["visitor_name"]
+            if "Timberwolves" != game["visitor_name"]
+            else "T-Wolves"
+        )
+        home_name = (
+            game["home_name"] if "Timberwolves" != game["home_name"] else "T-Wolves"
+        )
+        game_details = f"| {visitor_name} | {home_name} | {score or ''} {status} | {natl_tv_broadcaster} |\n"
         body += game_details
 
     return body
