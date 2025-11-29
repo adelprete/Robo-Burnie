@@ -193,6 +193,8 @@ def get_game_id_to_channels_map() -> dict:
                     game_id_to_channels[game["gameId"]].add("Telemundo")
                 elif "amazon" in stream.get("title").lower():
                     game_id_to_channels[game["gameId"]].add("Amazon Prime Video")
+                elif "prime" in stream.get("title").lower():
+                    game_id_to_channels[game["gameId"]].add("Amazon Prime Video")
     return game_id_to_channels
 
 
