@@ -1,0 +1,42 @@
+# Robo-Burnie cron jobs (Poetry environment)
+#
+# Install: run "poetry env info -p" in the project dir, set PROJECT_DIR and VENV below, then:
+#   crontab crontab.example
+#
+# Or paste the job lines into your existing crontab (crontab -e).
+
+# Project root and Poetry venv (required)
+# Get VENV path by running: cd /home/bogus-user/code/Robo-Burnie && poetry env info -p
+# Use that path as-is (e.g. .../robo-burnie-XXXXX-py3.13); we use $VENV/bin/python below.
+PROJECT_DIR=/home/bogus-user/code/Robo-Burnie
+VENV=/home/bogus-user/.cache/pypoetry/virtualenvs/robo-burnie-7oY7pNdB-py3.13
+# Logs (create with: mkdir -p $PROJECT_DIR/logs)
+LOG_DIR=$PROJECT_DIR/logs
+
+SHELL=/bin/bash
+PATH=/usr/bin:/bin
+
+# --- Daily jobs (adjust times to your schedule) ---
+
+# Game thread: create if there's a game today (e.g. morning before games)
+0 9 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/game_thread.py create >> $LOG_DIR/game_thread.log 2>&1
+
+# Schedule sidebar: update calendar and sidebar widget
+5 9 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/schedule_sidebar.py >> $LOG_DIR/schedule_sidebar.log 2>&1
+
+# Standings sidebar
+10 9 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/standings_sidebar.py >> $LOG_DIR/standings_sidebar.log 2>&1
+
+# Old Reddit sidebar
+15 9 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/update_old_reddit.py >> $LOG_DIR/update_old_reddit.log 2>&1
+
+# Around the League: create thread (when no Heat game)
+20 9 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/around_the_league_thread.py create >> $LOG_DIR/around_the_league_thread_create.log 2>&1
+
+# Around the League: update scores every 10 minutes during the day (e.g. 6pm–midnight ET)
+*/10 18-23 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/around_the_league_thread.py update >> $LOG_DIR/around_the_league_thread_update.log 2>&1
+*/10 0 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/around_the_league_thread.py update >> $LOG_DIR/around_the_league_thread_update.log 2>&1
+
+# --- Optional / inactive ---
+# Post game thread (inactive): run after games end
+# 30 1 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/post_game_thread.py
