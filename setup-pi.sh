@@ -69,7 +69,8 @@ run_project_setup() {
   echo "==> Installing crontab..."
   PROJECT_DIR="$(pwd)"
   VENV="$(poetry env info -p)"
-  sed "s|^PROJECT_DIR=.*|PROJECT_DIR=${PROJECT_DIR}|;s|^VENV=.*|VENV=${VENV}|" crontab.example | crontab -
+  LOG_DIR="${PROJECT_DIR}/logs"
+  sed "s|^PROJECT_DIR=.*|PROJECT_DIR=${PROJECT_DIR}|;s|^VENV=.*|VENV=${VENV}|;s|^LOG_DIR=.*|LOG_DIR=${LOG_DIR}|" crontab.example | crontab -
 
   echo ""
   echo "Setup complete. Crontab installed for $(whoami). Logs: $PROJECT_DIR/logs/"
