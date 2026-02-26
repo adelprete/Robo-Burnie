@@ -24,9 +24,10 @@ ensure_path() {
 
 # --- System setup (idempotent) ---
 run_system_setup() {
-  echo "==> System: apt update and install vim, pipx..."
+  echo "==> System: apt update and install vim, pipx, postfix..."
   sudo apt-get update -qq
-  sudo apt-get install -y vim pipx
+  echo "postfix postfix/main_mailer_type select Local only" | sudo debconf-set-selections
+  DEBIAN_FRONTEND=noninteractive sudo apt-get install -y vim pipx postfix
   echo "==> System: pipx install poetry and ensurepath..."
   pipx install poetry
   pipx ensurepath
