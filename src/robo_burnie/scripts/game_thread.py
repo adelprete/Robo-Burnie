@@ -117,7 +117,52 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
 
     self_text = self_text + table
 
+    standings_table = _build_standings_table(
+        todays_game["away_team_id"],
+        todays_game["home_team_id"],
+        away_team["tricode"],
+        home_team["tricode"],
+    )
+    if standings_table:
+        self_text = self_text + "\n\n" + standings_table
+
     return title, self_text
+
+
+def _build_standings_table(
+    away_team_id: int, home_team_id: int, away_tricode: str, home_tricode: str
+) -> str:
+    """Build a Reddit markdown table comparing both teams' standings context."""
+    try:
+        standings = _helpers.get_todays_standings()
+        away = _helpers.get_team_standings(away_team_id, standings)
+        home = _helpers.get_team_standings(home_team_id, standings)
+
+        if not away or not home:
+            return ""
+
+        rows = [
+            f"| | **{away_tricode}** | **{home_tricode}** |",
+            "|--|--|--|",
+            f"| **Seed** | {_ordinal(away['PlayoffRank'])} {away['Conference']} | {_ordinal(home['PlayoffRank'])} {home['Conference']} |",
+            f"| **Streak** | {away['strCurrentStreak']} | {home['strCurrentStreak']} |",
+            f"| **Last 10** | {away['L10']} | {home['L10']} |",
+            f"| **PPG** | {away['PointsPG']} | {home['PointsPG']} |",
+            f"| **Opp PPG** | {away['OppPointsPG']} | {home['OppPointsPG']} |",
+        ]
+        return "\n".join(rows)
+    except Exception:
+        logging.exception("Failed to build standings table")
+        return ""
+
+
+def _ordinal(n: int) -> str:
+    """Convert an integer to its ordinal string (1st, 2nd, 3rd, etc.)."""
+    if 11 <= (n % 100) <= 13:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
 
 
 def _submit_post(subreddit: str, title: str, self_text: str) -> None:

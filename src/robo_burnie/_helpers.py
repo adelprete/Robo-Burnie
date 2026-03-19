@@ -5,6 +5,7 @@ from collections import defaultdict
 
 __all__ = [
     "get_todays_standings",
+    "get_team_standings",
     "get_boxscore",
     "get_full_team_schedule",
     "get_game_from_cdn_endpoint",
@@ -48,6 +49,20 @@ def get_todays_standings():
     header = result["headers"]
     standings = [dict(zip(header, sublist)) for sublist in result["rowSet"]]
     return standings
+
+
+def get_team_standings(team_id: int, standings: list[dict] | None = None) -> dict:
+    """Look up a single team's standings entry by team ID.
+
+    If standings are not provided, they will be fetched via get_todays_standings().
+    """
+    if standings is None:
+        standings = get_todays_standings()
+
+    for team in standings:
+        if team["TeamID"] == team_id:
+            return team
+    return {}
 
 
 def get_boxscore(game_id: str) -> dict:
