@@ -54,6 +54,8 @@ def _main():
     )
     if not _post_game_thread_exists(reddit):
         _submit_post(reddit, todays_game["game_id"])
+        _helpers.set_script_enabled("post_game_thread", False)
+        logger.info("post_game_thread disabled until next !postgame on")
     else:
         logger.debug("Post Game Thread already exists")
 
@@ -72,55 +74,29 @@ def _wait_for_game_to_start(game_id: str) -> None:
 
 
 def _wait_for_game_to_end(game_id: str) -> None:
-    double_check_close_game = True
     while True:
         boxscore = _helpers.get_boxscore(game_id)
         if _is_game_over(boxscore):
-            if (
-                double_check_close_game
-                and abs(boxscore["awayTeam"]["score"] - boxscore["homeTeam"]["score"])
-                <= 3
-            ):
-                # Sometimes close games can be misreported as over when the final play is still being reviewed
-                logger.info(
-                    "Game was close. Double checking that the game actually ended."
-                )
-                double_check_close_game = False
-                time.sleep(15)
-            else:
-                break
-        else:
-            _sleep_for_awhile(boxscore)
+            break
+        _sleep_for_awhile(boxscore)
 
 
 def _is_game_over(boxscore: dict) -> bool:
     return (
         boxscore["gameStatus"] == GameStatus.POST_GAME.value
         and boxscore["awayTeam"]["score"] != boxscore["homeTeam"]["score"]
-    ) or (
-        boxscore["period"] >= 4
-        and boxscore["gameStatus"] == GameStatus.IN_PROGRESS.value
-        and boxscore["awayTeam"]["score"] != boxscore["homeTeam"]["score"]
-        and _helpers.gameclock_to_seconds(boxscore["gameClock"]) == 0
     )
 
 
 def _sleep_for_awhile(boxscore: dict) -> None:
     time_left = _helpers.gameclock_to_seconds(boxscore["gameClock"])
-    if boxscore["period"] >= 4 and boxscore["gameStatus"] == 2 and not time_left:
-        """if the game is in the 4th quarter and the clock has no value, the game might be over"""
-        logger.debug(f"Game might have ended: {time_left}")
-        time.sleep(3)
-    elif boxscore["period"] >= 4 and time_left < 40:
-        """if the game is in the 4th quarter and the clock is less than 40 seconds, the game is almost over"""
+    if boxscore["period"] >= 4 and time_left < 40:
         logger.debug(f"Game is almost over: {time_left}")
         time.sleep(10)
     elif boxscore["period"] >= 4:
-        """if the game is in the 4th quarter and its not almost over"""
         logger.debug(f"Game is in the 4th quarter: {time_left}")
         time.sleep(40)
     elif boxscore["period"] < 4:
-        """if the game is not in the 4th quarter, wait for a longer period"""
         logger.debug("Game is not in the 4th quarter yet")
         time.sleep(720)  # 12 mins
     else:
@@ -200,20 +176,52 @@ def _get_stats_leader_text(stat: str, players: list[dict]) -> str:
 def _generate_post_title(
     boxscore: dict, team_stats_key: str, opponent_stats_key: str
 ) -> str:
+    team_name = boxscore[team_stats_key]["teamName"]
+    opponent_name = boxscore[opponent_stats_key]["teamName"]
     team_score = boxscore[team_stats_key]["score"]
     opponent_score = boxscore[opponent_stats_key]["score"]
-    if team_score < opponent_score:
-        result = random.choice(["lose to the", "fall to the"])
-    else:
-        result = random.choice(["defeat the", "win against the"])
+    margin = abs(team_score - opponent_score)
 
-    return "[Post Game] {} {} {}: {} - {}".format(
-        boxscore[team_stats_key]["teamName"],
-        result,
-        boxscore[opponent_stats_key]["teamName"],
-        team_score,
-        opponent_score,
-    )
+    if team_score > opponent_score:
+        if margin >= 20:
+            templates = [
+                f"{team_name} blow out the {opponent_name}",
+                f"{team_name} dominate the {opponent_name}",
+                f"{team_name} cruise past the {opponent_name}",
+            ]
+        elif margin >= 10:
+            templates = [
+                f"{team_name} take down the {opponent_name}",
+                f"{team_name} defeat the {opponent_name}",
+                f"{team_name} handle the {opponent_name}",
+            ]
+        else:
+            templates = [
+                f"{team_name} hold off the {opponent_name}",
+                f"{team_name} edge out the {opponent_name}",
+                f"{team_name} squeak by the {opponent_name}",
+                f"{team_name} outlast the {opponent_name}",
+            ]
+    else:
+        if margin >= 20:
+            templates = [
+                f"{team_name} get blown out by the {opponent_name}",
+                f"{team_name} get routed by the {opponent_name}",
+            ]
+        elif margin >= 10:
+            templates = [
+                f"{team_name} fall to the {opponent_name}",
+                f"{team_name} lose to the {opponent_name}",
+                f"{team_name} drop one to the {opponent_name}",
+            ]
+        else:
+            templates = [
+                f"{team_name} fall short against the {opponent_name}",
+                f"{team_name} come up short against the {opponent_name}",
+                f"{team_name} lose a close one to the {opponent_name}",
+            ]
+
+    return f"[Post Game] {random.choice(templates)}, {team_score} - {opponent_score}"
 
 
 def _submit_post_game_thread(reddit: praw.Reddit, title: str, selftext: str) -> None:

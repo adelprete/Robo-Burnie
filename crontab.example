@@ -37,6 +37,9 @@ PATH=/usr/bin:/bin
 */10 13-23 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/around_the_league_thread.py update >> $LOG_DIR/around_the_league_thread_update.log 2>&1
 */10 0 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/around_the_league_thread.py update >> $LOG_DIR/around_the_league_thread_update.log 2>&1
 
-# --- Optional / inactive ---
-# Post game thread (inactive): run after games end
-# 30 1 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/post_game_thread.py
+# Check commands: scan game thread comments for !postgame on/off
+*/5 13-23 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/check_commands.py >> $LOG_DIR/check_commands.log 2>&1
+*/5 0 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/check_commands.py >> $LOG_DIR/check_commands.log 2>&1
+
+# Post game thread: waits for game to end, posts thread (enabled via !postgame on)
+30 1 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/post_game_thread.py >> $LOG_DIR/post_game_thread.log 2>&1

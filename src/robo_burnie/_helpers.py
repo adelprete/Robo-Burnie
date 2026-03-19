@@ -14,11 +14,11 @@ __all__ = [
     "get_todays_games",
     "get_todays_game_v2",
     "get_todays_game",
-    "get_boxscore",
     "get_boxscore_link",
     "gameclock_to_seconds",
     "get_espn_boxscore_link",
     "is_script_enabled",
+    "set_script_enabled",
 ]
 from datetime import datetime, timedelta
 from typing import List
@@ -392,3 +392,13 @@ def is_script_enabled(script_name: str) -> bool:
             config = json.load(file)
             return config["scripts"].get(script_name, {}).get("enabled", False)
     return False
+
+
+def set_script_enabled(script_name: str, enabled: bool) -> None:
+    """Toggle a script's enabled flag in .config.json."""
+    config_path = "src/robo_burnie/.config.json"
+    with open(config_path, "r") as f:
+        config = json.load(f)
+    config["scripts"][script_name]["enabled"] = enabled
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=4)

@@ -7,6 +7,11 @@
         "reset_config": {
             "enabled": true,
             "default_enabled": true
+        },
+        "check_commands": {
+            "enabled": true,
+            "default_enabled": true,
+            "last_checked_utc": 0
         }
     }
 }
