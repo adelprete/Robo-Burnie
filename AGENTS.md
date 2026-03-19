@@ -32,7 +32,7 @@ Every script in `scripts/` is a self-contained entry point. They all share the h
 
 Creates a stickied game-day discussion thread when the Heat play. Includes opponent, records, TV/radio info, standings context, and a box score link. Unstickies any existing post-game thread to make room.
 
-- Invoked with: `./run.sh game_thread create`
+- Invoked with: `poetry run python src/robo_burnie/scripts/game_thread.py create`
 - Runs once daily (morning, before games start).
 
 ### post_game_thread.py
@@ -107,10 +107,10 @@ Context manager (`file_lock`) using `fcntl.flock` to prevent overlapping runs of
 
 ## Running
 
-Scripts are invoked via `run.sh`:
+Scripts are invoked via Poetry:
 
 ```
-./run.sh <script_name> [arg]
+poetry run python src/robo_burnie/scripts/<script_name>.py [arg]
 ```
 
 In production, cron jobs handle scheduling. See `crontab.example` for the full schedule. The typical daily flow:

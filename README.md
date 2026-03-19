@@ -27,24 +27,23 @@ Copy your config and credentials (e.g. `.config.json`, `token.json`, Google serv
 
 ## How to run scripts
 
-Run from the repo root. You can use either **run.sh** or **poetry run python**:
+Run from the repo root with `poetry run python`:
 
-| Method | Example |
-|--------|--------|
-| `./run.sh <script_name> [arg]` | `./run.sh game_thread create` |
-| `poetry run python src/robo_burnie/scripts/<script>.py [arg]` | `poetry run python src/robo_burnie/scripts/game_thread.py create` |
+```bash
+poetry run python src/robo_burnie/scripts/<script>.py [arg]
+```
 
 ### Scripts and usage
 
 | Script | Command | Description |
 |--------|---------|-------------|
-| **game_thread** | `./run.sh game_thread create` | Runs daily; checks if a game is today and, if so, creates a game thread and unpins any post game threads. |
-| **post_game_thread** *(inactive)* | `./run.sh post_game_thread` | After a Miami Heat game ends, creates a Post Game discussion thread. |
-| **schedule_sidebar** | `./run.sh schedule_sidebar` | Runs daily; updates Google Calendar with the latest schedule and syncs the Schedule widget on the sidebar. |
-| **standings_sidebar** | `./run.sh standings_sidebar` | Runs daily; updates the Standings widget on the sidebar. |
-| **update_old_reddit** | `./run.sh update_old_reddit` | Runs daily; keeps standings and schedule on the old Reddit sidebar up to date. |
-| **around_the_league_thread** | `./run.sh around_the_league_thread create` or `./run.sh around_the_league_thread update` | Runs daily; creates or updates the [Around the League] thread when there are no Heat games (lists that day’s games and updates scores every 10 mins). |
-| **reset_config** | `./run.sh reset_config` | Resets the config file to defaults or creates it if missing. |
+| **game_thread** | `poetry run python src/robo_burnie/scripts/game_thread.py create` | Runs daily; checks if a game is today and, if so, creates a game thread and unpins any post game threads. |
+| **post_game_thread** *(inactive)* | `poetry run python src/robo_burnie/scripts/post_game_thread.py` | After a Miami Heat game ends, creates a Post Game discussion thread. |
+| **schedule_sidebar** | `poetry run python src/robo_burnie/scripts/schedule_sidebar.py` | Runs daily; updates Google Calendar with the latest schedule and syncs the Schedule widget on the sidebar. |
+| **standings_sidebar** | `poetry run python src/robo_burnie/scripts/standings_sidebar.py` | Runs daily; updates the Standings widget on the sidebar. |
+| **update_old_reddit** | `poetry run python src/robo_burnie/scripts/update_old_reddit.py` | Runs daily; keeps standings and schedule on the old Reddit sidebar up to date. |
+| **around_the_league_thread** | `poetry run python src/robo_burnie/scripts/around_the_league_thread.py create` or `update` | Runs daily; creates or updates the [Around the League] thread when there are no Heat games (lists that day's games and updates scores every 10 mins). |
+| **reset_config** | `poetry run python src/robo_burnie/scripts/reset_config.py` | Resets the config file to defaults or creates it if missing. |
 
 ## Cron (Poetry environment)
 
