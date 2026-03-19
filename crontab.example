@@ -31,7 +31,7 @@ PATH=/usr/bin:/bin
 15 9 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/update_old_reddit.py >> $LOG_DIR/update_old_reddit.log 2>&1
 
 # Around the League: create thread (when no Heat game)
-00 11 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/around_the_league_thread.py create >> $LOG_DIR/around_the_league_thread_create.log 2>&1
+10 12 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/around_the_league_thread.py create >> $LOG_DIR/around_the_league_thread_create.log 2>&1
 
 # Around the League: update scores every 10 minutes during the day (e.g. 6pm–midnight ET)
 */10 13-23 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/around_the_league_thread.py update >> $LOG_DIR/around_the_league_thread_update.log 2>&1
