@@ -16,11 +16,7 @@ poetry install
 To set up a Raspberry Pi with system deps, Poetry, the repo, and crontab in one go, run **setup-pi.sh** as the user you want to use (e.g. `pi` or any other login). Everything—clone, poetry env, crontab—is created for that user. Safe to run multiple times (e.g. if something fails, fix and re-run).
 
 ```bash
-# From repo root (e.g. after cloning):
 ./setup-pi.sh
-
-# Or from anywhere (script will clone to ~/code/Robo-Burnie and re-run):
-curl -sL https://raw.githubusercontent.com/adelprete/Robo-Burnie/master/setup-pi.sh -o /tmp/setup-pi.sh && bash /tmp/setup-pi.sh
 ```
 
 Copy your config and credentials (e.g. `.config.json`, `token.json`, Google service account JSON) to the Pi separately after setup.
