@@ -397,8 +397,16 @@ def is_script_enabled(script_name: str) -> bool:
 def set_script_enabled(script_name: str, enabled: bool) -> None:
     """Toggle a script's enabled flag in .config.json."""
     config_path = "src/robo_burnie/.config.json"
-    with open(config_path, "r") as f:
-        config = json.load(f)
+    default_config_path = "src/robo_burnie/default_config.json"
+
+    try:
+        with open(config_path, "r") as f:
+            config = json.load(f)
+    except FileNotFoundError:
+        # First run on a new machine: initialize runtime config from defaults.
+        with open(default_config_path, "r") as f:
+            config = json.load(f)
+
     config["scripts"][script_name]["enabled"] = enabled
     with open(config_path, "w") as f:
         json.dump(config, f, indent=4)

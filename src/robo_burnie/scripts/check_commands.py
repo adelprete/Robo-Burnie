@@ -97,8 +97,12 @@ def _get_last_checked_utc() -> float:
 
 
 def _set_last_checked_utc(utc_timestamp: float) -> None:
-    with open(CONFIG_PATH, "r") as f:
-        config = json.load(f)
+    try:
+        with open(CONFIG_PATH, "r") as f:
+            config = json.load(f)
+    except FileNotFoundError:
+        with open("src/robo_burnie/default_config.json", "r") as f:
+            config = json.load(f)
     config["scripts"].setdefault("check_commands", {})[
         "last_checked_utc"
     ] = utc_timestamp
