@@ -17,9 +17,6 @@ Run **setup-pi.sh** as the user that will own the install (e.g. `pi`). It instal
 
 ```bash
 ./setup-pi.sh
-
-# Or from anywhere (script will clone to ~/code/Robo-Burnie and re-run):
-curl -sL https://raw.githubusercontent.com/YOUR_USERNAME/Robo-Burnie/master/setup-pi.sh -o /tmp/setup-pi.sh && bash /tmp/setup-pi.sh
 ```
 
 Copy your config and credentials to the Pi separately after setup: `.config.json`, `token.json`, Google service account JSON, and **private.py** (in `src/robo_burnie/`).
@@ -37,12 +34,32 @@ poetry run python src/robo_burnie/scripts/<script>.py [arg]
 | Script | Command | Description |
 |--------|---------|-------------|
 | **game_thread** | `poetry run python src/robo_burnie/scripts/game_thread.py create` | Runs daily; checks if a game is today and, if so, creates a game thread and unpins any post game threads. |
-| **post_game_thread** *(inactive)* | `poetry run python src/robo_burnie/scripts/post_game_thread.py` | After a Miami Heat game ends, creates a Post Game discussion thread. |
+| **post_game_thread** | `poetry run python src/robo_burnie/scripts/post_game_thread.py` | Creates a Post Game discussion thread after the Heat game ends. Disabled by default; moderators toggle it on/off with `!postgame on`/`off` in the game thread. |
 | **schedule_sidebar** | `poetry run python src/robo_burnie/scripts/schedule_sidebar.py` | Runs daily; updates Google Calendar with the latest schedule and syncs the Schedule widget on the sidebar. |
 | **standings_sidebar** | `poetry run python src/robo_burnie/scripts/standings_sidebar.py` | Runs daily; updates the Standings widget on the sidebar. |
 | **update_old_reddit** | `poetry run python src/robo_burnie/scripts/update_old_reddit.py` | Runs daily; keeps standings and schedule on the old Reddit sidebar up to date. |
 | **around_the_league_thread** | `poetry run python src/robo_burnie/scripts/around_the_league_thread.py create` or `... update` | Runs daily; creates or updates the [Around the League] thread when there are no Heat games (lists that day’s games and updates scores every 10 mins). |
+| **check_commands** | `poetry run python src/robo_burnie/scripts/check_commands.py` | Scans game thread comments for moderator `!postgame on`/`off` commands and toggles the post game thread accordingly. Runs every 5 minutes during game hours. |
 | **reset_config** | `poetry run python src/robo_burnie/scripts/reset_config.py` | Resets the config file to defaults or creates it if missing. |
+
+## Development
+
+Requires **Python 3.13**.
+
+### Testing
+
+```bash
+poetry run pytest
+```
+
+### Formatting and linting
+
+The project uses [Black](https://github.com/psf/black) for formatting, [isort](https://pycqa.github.io/isort/) for import sorting, and [flake8](https://flake8.pycqa.org/) for linting. All three run automatically as [pre-commit](https://pre-commit.com/) hooks:
+
+```bash
+pre-commit install   # one-time setup
+pre-commit run --all-files  # manual run
+```
 
 ## Cron (Poetry environment)
 
