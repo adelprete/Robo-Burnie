@@ -7,7 +7,7 @@ from datetime import datetime
 import praw
 
 from robo_burnie import _helpers
-from robo_burnie._settings import SUBREDDIT, TEAM
+from robo_burnie._settings import SUBREDDIT, TEAM, get_flair_id
 from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 logging.basicConfig(
@@ -110,7 +110,7 @@ def _create_around_the_league_thread(
         title,
         selftext=body,
         send_replies=False,
-        flair_id="29f18426-a10b-11e6-af2b-0ea571864a50",
+        flair_id=get_flair_id("around_the_league"),
     )
     submission.mod.sticky()
     submission.mod.suggested_sort(sort="new")

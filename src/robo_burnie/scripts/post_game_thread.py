@@ -12,7 +12,7 @@ import praw
 
 from robo_burnie import _helpers
 from robo_burnie._file_lock import file_lock
-from robo_burnie._settings import SUBREDDIT, TEAM
+from robo_burnie._settings import TEAM, get_flair_id
 from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 logger = logging.getLogger(__name__)
@@ -22,10 +22,6 @@ logging.basicConfig(
 )
 
 SUBREDDIT = "heatcss"
-_HEATCSS_GAME_THREAD_FLAIR_ID = "8a22ad40-c182-11e3-877e-12313b0d38eb"
-_HEATCSS_POST_GAME_THREAD_FLAIR_ID = "aa3be42a-c182-11e3-b8ca-12313b0e88c2"
-_HEAT_POST_GAME_THREAD_FLAIR_ID = "d79dc9aa-cf0d-11e2-9b1b-12313d163d8f"
-_HEAT_GAME_THREAD_FLAIR_ID = "92815388-3a88-11e2-a4e1-12313d14a568"
 
 
 class GameStatus(Enum):
@@ -241,7 +237,7 @@ def _submit_post_game_thread(reddit: praw.Reddit, title: str, selftext: str) -> 
         title,
         selftext=selftext,
         send_replies=False,
-        flair_id=_HEATCSS_POST_GAME_THREAD_FLAIR_ID,
+        flair_id=get_flair_id("post_game_thread", SUBREDDIT),
     )
     submission.mod.sticky()
 

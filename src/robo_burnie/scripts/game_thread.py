@@ -9,7 +9,7 @@ import praw
 
 from robo_burnie import _helpers
 from robo_burnie._constants import TEAM_ID_TO_INFO, TEAM_TRI_TO_INFO
-from robo_burnie._settings import SUBREDDIT, TEAM
+from robo_burnie._settings import SUBREDDIT, TEAM, get_flair_id
 from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 logging.basicConfig(
@@ -183,7 +183,7 @@ def _submit_post(subreddit: str, title: str, self_text: str) -> None:
             title,
             selftext=self_text,
             send_replies=False,
-            flair_id="92815388-3a88-11e2-a4e1-12313d14a568",
+            flair_id=get_flair_id("game_thread"),
         )
         submission.mod.sticky()
         submission.mod.suggested_sort("new")
