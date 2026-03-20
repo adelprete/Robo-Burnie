@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from json import JSONDecodeError
 from typing import Tuple
@@ -22,7 +22,10 @@ logging.basicConfig(
 )
 
 SUBREDDIT = "heatcss"
-_POST_GAME_FLAIR_ID = "aa3be42a-c182-11e3-b8ca-12313b0e88c2"
+_HEATCSS_GAME_THREAD_FLAIR_ID = "8a22ad40-c182-11e3-877e-12313b0d38eb"
+_HEATCSS_POST_GAME_THREAD_FLAIR_ID = "aa3be42a-c182-11e3-b8ca-12313b0e88c2"
+_HEAT_POST_GAME_THREAD_FLAIR_ID = "d79dc9aa-cf0d-11e2-9b1b-12313d163d8f"
+_HEAT_GAME_THREAD_FLAIR_ID = "92815388-3a88-11e2-a4e1-12313d14a568"
 
 
 class GameStatus(Enum):
@@ -90,7 +93,10 @@ def _is_game_over(boxscore: dict) -> bool:
 
 def _sleep_for_awhile(boxscore: dict) -> None:
     time_left = _helpers.gameclock_to_seconds(boxscore["gameClock"])
-    if boxscore["period"] >= 4 and time_left < 40:
+    if boxscore["period"] >= 4 and time_left < 24:
+        logger.debug(f"Game is almost over: {time_left}")
+        time.sleep(5)
+    elif boxscore["period"] >= 4 and time_left < 40:
         logger.debug(f"Game is almost over: {time_left}")
         time.sleep(10)
     elif boxscore["period"] >= 4:
@@ -105,9 +111,14 @@ def _sleep_for_awhile(boxscore: dict) -> None:
 
 
 def _post_game_thread_exists(reddit: praw.Reddit) -> bool:
+    """True if a [Post Game] thread from today (UTC) exists."""
+    today_utc = datetime.now(tz=timezone.utc).date()
     subreddit = reddit.subreddit(SUBREDDIT)
-    for post in subreddit.hot(limit=15):
-        if post.stickied and "[Post Game]" in post.title:
+    for post in subreddit.new(limit=25):
+        if "[Post Game]" not in post.title:
+            continue
+        post_date = datetime.fromtimestamp(post.created_utc, tz=timezone.utc).date()
+        if post_date == today_utc:
             return True
     return False
 
@@ -115,6 +126,7 @@ def _post_game_thread_exists(reddit: praw.Reddit) -> bool:
 def _submit_post(reddit: praw.Reddit, game_id: str) -> None:
     boxscore = _helpers.get_boxscore(game_id)
     title, selftext = _generate_post_details(boxscore)
+    _unsticky_old_post_game_thread(reddit)
     _submit_post_game_thread(reddit, title, selftext)
     logger.info("Post Game Thread posted")
     _unsticky_game_thread(reddit)
@@ -229,9 +241,18 @@ def _submit_post_game_thread(reddit: praw.Reddit, title: str, selftext: str) -> 
         title,
         selftext=selftext,
         send_replies=False,
-        flair_id=_POST_GAME_FLAIR_ID,
+        flair_id=_HEATCSS_POST_GAME_THREAD_FLAIR_ID,
     )
     submission.mod.sticky()
+
+
+def _unsticky_old_post_game_thread(reddit: praw.Reddit) -> None:
+    subreddit = reddit.subreddit(SUBREDDIT)
+    for post in subreddit.hot(limit=5):
+        if post.stickied and "[Post Game]" in post.title:
+            post.mod.sticky(False)
+            logger.info("Unstickied old Post Game Thread")
+            break
 
 
 def _unsticky_game_thread(reddit: praw.Reddit) -> None:
