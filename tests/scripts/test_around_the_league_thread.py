@@ -164,7 +164,7 @@ def test_update_thread():
 
 
 @patch("robo_burnie.scripts.around_the_league_thread.praw.Reddit")
-@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_game_v2")
+@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_game_v3")
 def test_main_team_plays_today(mock_get_game, mock_reddit_cls):
     mock_get_game.return_value = {"game_id": "001"}
     mock_reddit = MagicMock()
@@ -178,12 +178,14 @@ def test_main_team_plays_today(mock_get_game, mock_reddit_cls):
     mock_get_game.assert_called_once()
 
 
-@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games_cdn")
+@patch(
+    "robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games_from_schedule"
+)
 @patch("robo_burnie.scripts.around_the_league_thread.praw.Reddit")
-@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_game_v2")
-def test_main_no_games_today(mock_get_game, mock_reddit_cls, mock_games_cdn):
+@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_game_v3")
+def test_main_no_games_today(mock_get_game, mock_reddit_cls, mock_games_schedule):
     mock_get_game.return_value = {}
-    mock_games_cdn.return_value = {}
+    mock_games_schedule.return_value = {}
     mock_reddit = MagicMock()
     mock_reddit_cls.return_value = mock_reddit
     mock_subreddit = MagicMock()
@@ -192,19 +194,21 @@ def test_main_no_games_today(mock_get_game, mock_reddit_cls, mock_games_cdn):
 
     _main("create")
 
-    mock_games_cdn.assert_called_once()
+    mock_games_schedule.assert_called_once()
 
 
 @patch("robo_burnie.scripts.around_the_league_thread._create_around_the_league_thread")
 @patch("robo_burnie.scripts.around_the_league_thread._generate_post_body")
-@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games_cdn")
+@patch(
+    "robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games_from_schedule"
+)
 @patch("robo_burnie.scripts.around_the_league_thread.praw.Reddit")
-@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_game_v2")
+@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_game_v3")
 def test_main_create_action(
-    mock_get_game, mock_reddit_cls, mock_games_cdn, mock_gen_body, mock_create
+    mock_get_game, mock_reddit_cls, mock_games_schedule, mock_gen_body, mock_create
 ):
     mock_get_game.return_value = {}
-    mock_games_cdn.return_value = {"001": {"some": "game"}}
+    mock_games_schedule.return_value = {"001": {"some": "game"}}
     mock_gen_body.return_value = "body"
     mock_reddit = MagicMock()
     mock_reddit_cls.return_value = mock_reddit
@@ -218,7 +222,7 @@ def test_main_create_action(
 @patch("robo_burnie.scripts.around_the_league_thread._generate_post_body")
 @patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games_cdn")
 @patch("robo_burnie.scripts.around_the_league_thread.praw.Reddit")
-@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_game_v2")
+@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_game_v3")
 def test_main_update_action(
     mock_get_game, mock_reddit_cls, mock_games_cdn, mock_gen_body, mock_update
 ):

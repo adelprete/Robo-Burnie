@@ -12,6 +12,7 @@ __all__ = [
     "get_current_datetime",
     "get_todays_date_str",
     "get_todays_games",
+    "get_todays_games_from_schedule",
     "get_todays_game_v2",
     "get_todays_game",
     "get_boxscore_link",
@@ -181,6 +182,42 @@ def get_todays_games_cdn() -> list[dict]:
                 "home_pts": game["homeTeam"].get("score"),
                 "visitor_pts": game["awayTeam"].get("score"),
             }
+    return games
+
+
+def get_todays_games_from_schedule() -> dict:
+    """Get today's games from the full season schedule (ScheduleLeagueV2)."""
+    games_data = scheduleleaguev2.ScheduleLeagueV2().get_dict()["leagueSchedule"]
+    todays_date = get_todays_date_str(format="%m/%d/%Y")
+
+    games = {}
+    for game_date in games_data["gameDates"]:
+        if todays_date in game_date["gameDate"]:
+            for game in game_date["games"]:
+                national_tv = [
+                    b["broadcasterDisplay"]
+                    for b in game.get("broadcasters", {}).get(
+                        "nationalBroadcasters", []
+                    )
+                    if b.get("broadcasterMedia") == "tv"
+                ]
+                games[game["gameId"]] = {
+                    "game_status_text": game["gameStatusText"],
+                    "game_status_id": game["gameStatus"],
+                    "live_period": 0,
+                    "natl_tv_broadcaster_abbreviation": ", ".join(national_tv),
+                    "home_team_id": game["homeTeam"]["teamId"],
+                    "visitor_team_id": game["awayTeam"]["teamId"],
+                    "home_name": game["homeTeam"]["teamName"],
+                    "visitor_name": game["awayTeam"]["teamName"],
+                    "home_abbreviation": game["homeTeam"]["teamTricode"],
+                    "visitor_abbreviation": game["awayTeam"]["teamTricode"],
+                    "home_city_name": game["homeTeam"]["teamCity"],
+                    "visitor_city_name": game["awayTeam"]["teamCity"],
+                    "home_pts": None,
+                    "visitor_pts": None,
+                }
+            break
     return games
 
 

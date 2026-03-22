@@ -32,23 +32,27 @@ def _main(action: str) -> None:
     )
     subreddit = reddit.subreddit(SUBREDDIT)
 
-    team_game_today = _helpers.get_todays_game_v2(team=TEAM)
+    team_game_today = _helpers.get_todays_game_v3(team=TEAM)
     if team_game_today:
-        logging.info(f"{TEAM} Game Today.  Skipping Around the League Thread")
+        logging.info(f"{TEAM} Game Today. Skipping Around the League Thread")
         _unsticky_old_around_the_league_thread(subreddit)
         return
 
-    todays_games = _helpers.get_todays_games_cdn()
+    if action == "create":
+        todays_games = _helpers.get_todays_games_from_schedule()
+    else:
+        todays_games = _helpers.get_todays_games_cdn()
+
     if not todays_games:
         logging.info("No Games Today. Skipping Around the League Thread")
         _unsticky_old_around_the_league_thread(subreddit)
         return
-    else:
-        body = _generate_post_body(todays_games)
-        if action == "create":
-            _create_around_the_league_thread(subreddit, body)
-        elif action == "update":
-            _update_around_the_league_thread(subreddit, body)
+
+    body = _generate_post_body(todays_games)
+    if action == "create":
+        _create_around_the_league_thread(subreddit, body)
+    elif action == "update":
+        _update_around_the_league_thread(subreddit, body)
 
 
 def _generate_post_body(todays_games: dict) -> str:
@@ -110,7 +114,7 @@ def _create_around_the_league_thread(
         title,
         selftext=body,
         send_replies=False,
-        flair_id=get_flair_id("around_the_league"),
+        flair_id=get_flair_id("around_the_league", SUBREDDIT),
     )
     submission.mod.sticky()
     submission.mod.suggested_sort(sort="new")

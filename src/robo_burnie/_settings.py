@@ -12,7 +12,7 @@ FLAIR_IDS: dict[str, dict[str, str]] = {
     "heatcss": {
         "game_thread": "8a22ad40-c182-11e3-877e-12313b0d38eb",
         "post_game_thread": "aa3be42a-c182-11e3-b8ca-12313b0e88c2",
-        "around_the_league": "29f18426-a10b-11e6-af2b-0ea571864a50",
+        "around_the_league": "5886942a-25f4-11f1-b0f4-0ec3018158b3",
     },
 }
 
