@@ -7,6 +7,7 @@ import pytest
 
 from robo_burnie.scripts.around_the_league_thread import (
     _create_around_the_league_thread,
+    _format_around_the_league_tv_channels,
     _generate_post_body,
     _main,
     _unsticky_old_around_the_league_thread,
@@ -38,6 +39,28 @@ def todays_games():
             "natl_tv_broadcaster_abbreviation": None,
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# _format_around_the_league_tv_channels
+# ---------------------------------------------------------------------------
+
+
+def test_format_tv_omits_amazon_when_other_channels():
+    assert _format_around_the_league_tv_channels("ESPN, Amazon Prime Video") == "ESPN"
+    assert _format_around_the_league_tv_channels("Amazon Prime Video, TNT") == "TNT"
+
+
+def test_format_tv_keeps_amazon_when_only_channel():
+    assert (
+        _format_around_the_league_tv_channels("Amazon Prime Video")
+        == "Amazon Prime Video"
+    )
+
+
+def test_format_tv_prime_video_display_name():
+    assert _format_around_the_league_tv_channels("Prime Video") == "Prime Video"
+    assert _format_around_the_league_tv_channels("ESPN, Prime Video") == "ESPN"
 
 
 # ---------------------------------------------------------------------------
@@ -90,6 +113,37 @@ def test_generate_post_body_tbd_broadcaster():
     }
     body = _generate_post_body(games)
     assert "TBD" not in body
+
+
+def test_generate_post_body_amazon_prime_with_linear_tv():
+    games = {
+        "001": {
+            "visitor_name": "Heat",
+            "home_name": "Celtics",
+            "visitor_pts": None,
+            "home_pts": None,
+            "game_status_text": " 7:30 PM ET ",
+            "natl_tv_broadcaster_abbreviation": "ESPN, Amazon Prime Video",
+        },
+    }
+    body = _generate_post_body(games)
+    assert "ESPN" in body
+    assert "Amazon" not in body
+
+
+def test_generate_post_body_amazon_prime_only():
+    games = {
+        "001": {
+            "visitor_name": "Heat",
+            "home_name": "Celtics",
+            "visitor_pts": None,
+            "home_pts": None,
+            "game_status_text": " 7:30 PM ET ",
+            "natl_tv_broadcaster_abbreviation": "Amazon Prime Video",
+        },
+    }
+    body = _generate_post_body(games)
+    assert "Amazon Prime Video" in body
 
 
 # ---------------------------------------------------------------------------

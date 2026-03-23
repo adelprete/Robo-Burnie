@@ -21,6 +21,26 @@ logging.basicConfig(
 TODAYS_DATE_STR = _helpers.get_todays_date_str(hours_offset=3)
 
 
+def _is_amazon_prime_channel(label: str) -> bool:
+    n = label.strip().lower()
+    if not n:
+        return False
+    if "amazon" in n and "prime" in n:
+        return True
+    if n == "prime video":
+        return True
+    return False
+
+
+def _format_around_the_league_tv_channels(natl_tv: str) -> str:
+    """Drop Amazon Prime from the list when traditional TV networks are also listed."""
+    parts = [p.strip() for p in natl_tv.split(",") if p.strip()]
+    non_amazon = [p for p in parts if not _is_amazon_prime_channel(p)]
+    if non_amazon:
+        return ", ".join(non_amazon)
+    return ", ".join(parts)
+
+
 def _main(action: str) -> None:
     """Creates or updates the Around the League thread on the subreddit"""
     reddit = praw.Reddit(
@@ -72,12 +92,10 @@ def _generate_post_body(todays_games: dict) -> str:
             if score
             else game["game_status_text"].strip()
         )
-        natl_tv_broadcaster = (
-            game["natl_tv_broadcaster_abbreviation"]
-            if game["natl_tv_broadcaster_abbreviation"]
-            and game["natl_tv_broadcaster_abbreviation"] != "TBD"
-            else ""
-        )
+        raw_tv = game["natl_tv_broadcaster_abbreviation"]
+        natl_tv_broadcaster = ""
+        if raw_tv and raw_tv != "TBD":
+            natl_tv_broadcaster = _format_around_the_league_tv_channels(raw_tv)
         # Timberwolves name is too long and wraps on mobile
         visitor_name = (
             game["visitor_name"]
