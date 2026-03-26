@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import random
+import re
 import time
 from datetime import datetime, timezone
 from enum import Enum
@@ -137,17 +138,6 @@ def _generate_post_details(boxscore: dict) -> Tuple[str, str]:
         team_stats_key = "awayTeam"
         opponent_stats_key = "homeTeam"
 
-    # Get Stat leaders
-    points_leader_text = _get_stats_leader_text(
-        "points", boxscore[team_stats_key]["players"]
-    )
-    rebounds_leader_text = _get_stats_leader_text(
-        "reboundsTotal", boxscore[team_stats_key]["players"]
-    )
-    assists_leader_text = _get_stats_leader_text(
-        "assists", boxscore[team_stats_key]["players"]
-    )
-
     title = _generate_post_title(boxscore, team_stats_key, opponent_stats_key)
 
     box_score_link = _helpers.get_boxscore_link(
@@ -157,28 +147,108 @@ def _generate_post_details(boxscore: dict) -> Tuple[str, str]:
         game_time=datetime.strptime(boxscore["gameTimeLocal"], "%Y-%m-%dT%H:%M:%S%z"),
     )
 
-    selftext = f"Box Score: {box_score_link}"
-    selftext += "\n\n"
-    selftext += points_leader_text
-    selftext += "\n\n"
-    selftext += rebounds_leader_text
-    selftext += "\n\n"
-    selftext += assists_leader_text
+    our_team = boxscore[team_stats_key]
+    opponent_team = boxscore[opponent_stats_key]
+    top_scorer_line = _get_top_scorer_lead_line(
+        our_team.get("players", []),
+        our_team.get("teamCity", ""),
+        our_team["teamName"],
+    )
+    heat_table = _team_boxscore_markdown(our_team)
+    opponent_table = _team_boxscore_markdown(opponent_team)
+
+    selftext = f"Box Score: {box_score_link}\n\n{top_scorer_line}\n\n{heat_table}\n\n{opponent_table}"
 
     return title, selftext
 
 
-def _get_stats_leader_text(stat: str, players: list[dict]) -> str:
-    sorted_players = sorted(players, key=lambda p: p["statistics"][stat], reverse=True)
-    stat_leader = sorted_players[0]
+def _minutes_display(minutes_iso: str) -> str:
+    if not minutes_iso:
+        return "-"
+    match = re.match(r"PT(\d+)M(?:(\d+(?:\.\d+)?)S)?", minutes_iso)
+    if not match:
+        return "-"
+    mins = int(match.group(1))
+    secs = float(match.group(2)) if match.group(2) else 0.0
+    return f"{mins}:{int(round(secs)):02d}"
 
-    abbreviated_stat_map = {
-        "points": "PTS",
-        "reboundsTotal": "REBS",
-        "assists": "ASTS",
-    }
-    statline_text = f"**{stat_leader['name']}**: {stat_leader['statistics'][stat]} {abbreviated_stat_map[stat]}"
-    return statline_text
+
+def _fg_split(stats: dict, made_key: str, att_key: str) -> str:
+    return f"{stats.get(made_key, 0)}-{stats.get(att_key, 0)}"
+
+
+def _sort_players_for_boxscore(players: list[dict]) -> list[dict]:
+    played = [p for p in players if p.get("played", "1") == "1"]
+    return sorted(
+        played,
+        key=lambda p: (0 if p.get("starter") == "1" else 1, int(p.get("order", 999))),
+    )
+
+
+def _player_display_name(player: dict) -> str:
+    return player.get("nameI") or player.get("name", "Unknown")
+
+
+def _get_top_scorer_lead_line(
+    players: list[dict], team_city: str, team_name: str
+) -> str:
+    played = [p for p in players if p.get("played", "1") == "1"]
+    if not played:
+        return ""
+    leader = max(played, key=lambda p: p.get("statistics", {}).get("points", 0))
+    stats = leader.get("statistics") or {}
+    pts = stats.get("points", 0)
+    name = leader.get("name") or _player_display_name(leader)
+    label = f"{team_city} {team_name}".strip() if team_city else team_name
+    return f"**{name}** led the {label} with **{pts}** PTS."
+
+
+def _team_boxscore_markdown(team: dict) -> str:
+    city = team.get("teamCity", "")
+    name = team.get("teamName", "Team")
+    header_title = f"{city} {name}".strip() if city else name
+    score = team.get("score", 0)
+    players = _sort_players_for_boxscore(team.get("players", []))
+
+    lines = [
+        f"### {header_title} ({score})",
+        "",
+        "| Player | MIN | PTS | REB | AST | STL | BLK | FG | 3PT | FT |",
+        "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|",
+    ]
+
+    for p in players:
+        stats = p.get("statistics") or {}
+        min_src = stats.get("minutes") or stats.get("minutesCalculated") or ""
+        row = [
+            _player_display_name(p),
+            _minutes_display(min_src),
+            str(stats.get("points", 0)),
+            str(stats.get("reboundsTotal", 0)),
+            str(stats.get("assists", 0)),
+            str(stats.get("steals", 0)),
+            str(stats.get("blocks", 0)),
+            _fg_split(stats, "fieldGoalsMade", "fieldGoalsAttempted"),
+            _fg_split(stats, "threePointersMade", "threePointersAttempted"),
+            _fg_split(stats, "freeThrowsMade", "freeThrowsAttempted"),
+        ]
+        lines.append("| " + " | ".join(row) + " |")
+
+    team_stats = team.get("statistics")
+    if isinstance(team_stats, dict):
+        totals = [
+            str(team_stats.get("points", score)),
+            str(team_stats.get("reboundsTotal", 0)),
+            str(team_stats.get("assists", 0)),
+            str(team_stats.get("steals", 0)),
+            str(team_stats.get("blocks", 0)),
+            _fg_split(team_stats, "fieldGoalsMade", "fieldGoalsAttempted"),
+            _fg_split(team_stats, "threePointersMade", "threePointersAttempted"),
+            _fg_split(team_stats, "freeThrowsMade", "freeThrowsAttempted"),
+        ]
+        lines.append("| **TEAM** | | " + " | ".join(totals) + " |")
+
+    return "\n".join(lines)
 
 
 def _generate_post_title(
