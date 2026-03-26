@@ -149,7 +149,7 @@ def _generate_post_details(boxscore: dict) -> Tuple[str, str]:
 
     our_team = boxscore[team_stats_key]
     opponent_team = boxscore[opponent_stats_key]
-    top_scorer_line = _get_top_scorer_lead_line(
+    top_scorer_line = _get_top_player_lead_line(
         our_team.get("players", []),
         our_team.get("teamCity", ""),
         our_team["teamName"],
@@ -189,18 +189,27 @@ def _player_display_name(player: dict) -> str:
     return player.get("nameI") or player.get("name", "Unknown")
 
 
-def _get_top_scorer_lead_line(
+def _player_impact_score(stats: dict) -> float:
+    pts = stats.get("points", 0)
+    reb = stats.get("reboundsTotal", 0)
+    ast = stats.get("assists", 0)
+    return pts * 1.5 + ast * 1.25 + reb
+
+
+def _get_top_player_lead_line(
     players: list[dict], team_city: str, team_name: str
 ) -> str:
     played = [p for p in players if p.get("played", "1") == "1"]
     if not played:
         return ""
-    leader = max(played, key=lambda p: p.get("statistics", {}).get("points", 0))
+    leader = max(played, key=lambda p: _player_impact_score(p.get("statistics", {})))
     stats = leader.get("statistics") or {}
     pts = stats.get("points", 0)
+    reb = stats.get("reboundsTotal", 0)
+    ast = stats.get("assists", 0)
     name = leader.get("name") or _player_display_name(leader)
     label = f"{team_city} {team_name}".strip() if team_city else team_name
-    return f"**{name}** led the {label} with **{pts}** PTS."
+    return f"**{name}** led the {label} with **{pts}** PTS, **{reb}** REB, and **{ast}** AST."
 
 
 def _team_boxscore_markdown(team: dict) -> str:
@@ -260,43 +269,80 @@ def _generate_post_title(
     opponent_score = boxscore[opponent_stats_key]["score"]
     margin = abs(team_score - opponent_score)
 
+    # Phrase between team_name and opponent_name is capped at 22 characters
+    # (excluding the two nicknames).
     if team_score > opponent_score:
-        if margin >= 20:
+        if margin <= 5:
             templates = [
-                f"{team_name} blow out the {opponent_name}",
-                f"{team_name} dominate the {opponent_name}",
-                f"{team_name} cruise past the {opponent_name}",
+                f"{team_name} eke one out vs the {opponent_name}",
+                f"{team_name} survive the {opponent_name}",
+                f"{team_name} hang on against the {opponent_name}",
+                f"{team_name} escape the {opponent_name}",
+                f"{team_name} slip past the {opponent_name}",
             ]
-        elif margin >= 10:
+        elif margin <= 10:
+            templates = [
+                f"{team_name} hold off the {opponent_name}",
+                f"{team_name} outlast the {opponent_name}",
+                f"{team_name} fend off the {opponent_name}",
+                f"{team_name} squeak by the {opponent_name}",
+                f"{team_name} ward off the {opponent_name}",
+                f"{team_name} grind past the {opponent_name}",
+                f"{team_name} squeeze past the {opponent_name}",
+            ]
+        elif margin <= 20:
             templates = [
                 f"{team_name} take down the {opponent_name}",
                 f"{team_name} defeat the {opponent_name}",
                 f"{team_name} handle the {opponent_name}",
+                f"{team_name} outplay the {opponent_name}",
+                f"{team_name} take care of the {opponent_name}",
             ]
         else:
             templates = [
-                f"{team_name} hold off the {opponent_name}",
-                f"{team_name} edge out the {opponent_name}",
-                f"{team_name} squeak by the {opponent_name}",
-                f"{team_name} outlast the {opponent_name}",
+                f"{team_name} blow out the {opponent_name}",
+                f"{team_name} dominate the {opponent_name}",
+                f"{team_name} cruise past the {opponent_name}",
+                f"{team_name} steamroll the {opponent_name}",
+                f"{team_name} demolish the {opponent_name}",
+                f"{team_name} overwhelm the {opponent_name}",
+                f"{team_name} bury the {opponent_name}",
+                f"{team_name} run over the {opponent_name}",
             ]
     else:
-        if margin >= 20:
+        if margin <= 5:
             templates = [
-                f"{team_name} get blown out by the {opponent_name}",
-                f"{team_name} get routed by the {opponent_name}",
+                f"{team_name} fall late to the {opponent_name}",
+                f"{team_name} lose a tough one to {opponent_name}",
+                f"{team_name} can't hang on vs the {opponent_name}",
+                f"{team_name} let one slip vs the {opponent_name}",
             ]
-        elif margin >= 10:
+        elif margin <= 10:
+            templates = [
+                f"{team_name} fall short vs the {opponent_name}",
+                f"{team_name} come up short vs the {opponent_name}",
+                f"{team_name} drop a close one to {opponent_name}",
+                f"{team_name} can't close vs the {opponent_name}",
+                f"{team_name} fall to the {opponent_name}",
+                f"{team_name} drop one to the {opponent_name}",
+            ]
+        elif margin <= 20:
             templates = [
                 f"{team_name} fall to the {opponent_name}",
                 f"{team_name} lose to the {opponent_name}",
                 f"{team_name} drop one to the {opponent_name}",
+                f"{team_name} stumble against the {opponent_name}",
+                f"{team_name} get bested by the {opponent_name}",
+                f"{team_name} come up short vs the {opponent_name}",
             ]
         else:
             templates = [
-                f"{team_name} fall short against the {opponent_name}",
-                f"{team_name} come up short against the {opponent_name}",
-                f"{team_name} lose a close one to the {opponent_name}",
+                f"{team_name} get blown out by the {opponent_name}",
+                f"{team_name} get routed by the {opponent_name}",
+                f"{team_name} get crushed by the {opponent_name}",
+                f"{team_name} get buried by the {opponent_name}",
+                f"{team_name} get smoked by the {opponent_name}",
+                f"{team_name} get torched by the {opponent_name}",
             ]
 
     return f"[Post Game] {random.choice(templates)}, {team_score} - {opponent_score}"
