@@ -13,16 +13,13 @@ import praw
 
 from robo_burnie import _helpers
 from robo_burnie._file_lock import file_lock
-from robo_burnie._settings import TEAM, get_flair_id
+from robo_burnie._settings import SUBREDDIT, TEAM, get_flair_id
 from robo_burnie.private import BOT_PASSWORD, CLIENT_ID, CLIENT_SECRET_KEY
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
-
-SUBREDDIT = "heatcss"
 
 
 class GameStatus(Enum):

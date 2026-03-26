@@ -42,5 +42,5 @@ PATH=/usr/bin:/bin
 */5 0 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/check_commands.py >> $LOG_DIR/check_commands.log 2>&1
 
 # Post game thread: retries every 15 min during game hours; file_lock prevents duplicate runs
-*/15 13-23 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/post_game_thread.py >> $LOG_DIR/post_game_thread.log 2>&1
-*/15 0-2 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/post_game_thread.py >> $LOG_DIR/post_game_thread.log 2>&1
+*/5 13-23 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/post_game_thread.py >> $LOG_DIR/post_game_thread.log 2>&1
+*/5 0-2 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/post_game_thread.py >> $LOG_DIR/post_game_thread.log 2>&1
