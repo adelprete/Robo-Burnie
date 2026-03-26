@@ -10,7 +10,6 @@ from robo_burnie.scripts.post_game_thread import (
     GameStatus,
     _generate_post_details,
     _generate_post_title,
-    _get_stats_leader_text,
     _is_game_over,
     _main,
     _post_game_thread_exists,
@@ -27,13 +26,44 @@ from robo_burnie.scripts.post_game_thread import (
 # ---------------------------------------------------------------------------
 
 
-def _make_player(name: str, pts: int, reb: int, ast: int) -> dict:
+def _make_player(
+    name: str,
+    name_i: str,
+    order: int,
+    *,
+    starter: str = "1",
+    pts: int,
+    reb: int,
+    ast: int,
+    stl: int = 1,
+    blk: int = 0,
+    fg_made: int = 10,
+    fg_att: int = 18,
+    tp_made: int = 2,
+    tp_att: int = 6,
+    ft_made: int = 6,
+    ft_att: int = 7,
+    minutes: str = "PT32M15.00S",
+) -> dict:
     return {
         "name": name,
+        "nameI": name_i,
+        "order": order,
+        "starter": starter,
+        "played": "1",
         "statistics": {
+            "minutes": minutes,
             "points": pts,
             "reboundsTotal": reb,
             "assists": ast,
+            "steals": stl,
+            "blocks": blk,
+            "fieldGoalsMade": fg_made,
+            "fieldGoalsAttempted": fg_att,
+            "threePointersMade": tp_made,
+            "threePointersAttempted": tp_att,
+            "freeThrowsMade": ft_made,
+            "freeThrowsAttempted": ft_att,
         },
     }
 
@@ -48,20 +78,48 @@ def boxscore():
         "gameTimeLocal": "2025-01-15T19:30:00-05:00",
         "homeTeam": {
             "teamTricode": "MIA",
+            "teamCity": "Miami",
             "teamName": "Heat",
             "score": 110,
+            "statistics": {
+                "points": 110,
+                "reboundsTotal": 45,
+                "assists": 25,
+                "steals": 8,
+                "blocks": 5,
+                "fieldGoalsMade": 42,
+                "fieldGoalsAttempted": 85,
+                "threePointersMade": 14,
+                "threePointersAttempted": 38,
+                "freeThrowsMade": 12,
+                "freeThrowsAttempted": 15,
+            },
             "players": [
-                _make_player("Bam Adebayo", 28, 12, 5),
-                _make_player("Tyler Herro", 22, 4, 6),
+                _make_player("Bam Adebayo", "B. Adebayo", 1, pts=28, reb=12, ast=5),
+                _make_player("Tyler Herro", "T. Herro", 2, pts=22, reb=4, ast=6),
             ],
         },
         "awayTeam": {
             "teamTricode": "BOS",
+            "teamCity": "Boston",
             "teamName": "Celtics",
             "score": 100,
+            "statistics": {
+                "points": 100,
+                "reboundsTotal": 40,
+                "assists": 22,
+                "steals": 6,
+                "blocks": 3,
+                "fieldGoalsMade": 38,
+                "fieldGoalsAttempted": 82,
+                "threePointersMade": 12,
+                "threePointersAttempted": 35,
+                "freeThrowsMade": 12,
+                "freeThrowsAttempted": 14,
+            },
             "players": [
-                _make_player("Jayson Tatum", 30, 8, 4),
-                _make_player("Jaylen Brown", 20, 5, 3),
+                _make_player("Jayson Tatum", "J. Tatum", 1, pts=30, reb=8, ast=4),
+                _make_player("Jaylen Brown", "J. Brown", 2, pts=20, reb=5, ast=3),
             ],
         },
     }
@@ -96,32 +154,6 @@ def test_is_game_over_false_tied(boxscore):
     boxscore["homeTeam"]["score"] = 100
     boxscore["awayTeam"]["score"] = 100
     assert _is_game_over(boxscore) is False
-
-
-# ---------------------------------------------------------------------------
-# _get_stats_leader_text
-# ---------------------------------------------------------------------------
-
-
-def test_get_stats_leader_text_points(boxscore):
-    result = _get_stats_leader_text("points", boxscore["homeTeam"]["players"])
-    assert "Bam Adebayo" in result
-    assert "28" in result
-    assert "PTS" in result
-
-
-def test_get_stats_leader_text_rebounds(boxscore):
-    result = _get_stats_leader_text("reboundsTotal", boxscore["homeTeam"]["players"])
-    assert "Bam Adebayo" in result
-    assert "12" in result
-    assert "REBS" in result
-
-
-def test_get_stats_leader_text_assists(boxscore):
-    result = _get_stats_leader_text("assists", boxscore["homeTeam"]["players"])
-    assert "Tyler Herro" in result
-    assert "6" in result
-    assert "ASTS" in result
 
 
 # ---------------------------------------------------------------------------
@@ -190,9 +222,12 @@ def test_generate_post_details(mock_boxscore_link, boxscore):
     assert "[Post Game]" in title
     assert "110 - 100" in title
     assert "https://espn.com/boxscore" in selftext
-    assert "PTS" in selftext
-    assert "REBS" in selftext
-    assert "ASTS" in selftext
+    assert "**Bam Adebayo** led the Miami Heat with **28** PTS." in selftext
+    assert "| Player | MIN | PTS | REB | AST | STL | BLK | FG | 3PT | FT |" in selftext
+    assert "### Miami Heat (110)" in selftext
+    assert "### Boston Celtics (100)" in selftext
+    assert "| B. Adebayo |" in selftext
+    assert "| **TEAM** | | 110 |" in selftext
 
 
 @patch(
@@ -200,13 +235,19 @@ def test_generate_post_details(mock_boxscore_link, boxscore):
     return_value="https://espn.com/boxscore",
 )
 def test_generate_post_details_away_team(mock_boxscore_link, boxscore):
-    boxscore["awayTeam"]["teamTricode"] = "MIA"
-    boxscore["homeTeam"]["teamTricode"] = "BOS"
+    # Miami on the road: swap home/away blobs so MIA is awayTeam and TEAM still matches.
+    boxscore["homeTeam"], boxscore["awayTeam"] = (
+        boxscore["awayTeam"],
+        boxscore["homeTeam"],
+    )
     random.seed(0)
     title, selftext = _generate_post_details(boxscore)
 
     assert "Celtics" in title
     assert "Heat" in title
+    assert "### Miami Heat (110)" in selftext
+    assert "### Boston Celtics (100)" in selftext
+    assert "**Bam Adebayo** led the Miami Heat with **28** PTS." in selftext
 
 
 # ---------------------------------------------------------------------------
