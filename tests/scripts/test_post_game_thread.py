@@ -161,6 +161,34 @@ def test_is_game_over_false_tied(boxscore):
 # ---------------------------------------------------------------------------
 
 
+def _connector_between_team_names(title: str, a: str, b: str) -> str:
+    core = title.removeprefix("[Post Game] ").rsplit(", ", 1)[0]
+    assert core.startswith(a) and core.endswith(b)
+    return core[len(a) : -len(b)]
+
+
+def test_generate_post_title_connector_at_most_22_chars(boxscore):
+    """Phrase between the two nicknames (excluding names) ≤ 22 characters."""
+    boxscore["homeTeam"]["teamName"] = "α"
+    boxscore["awayTeam"]["teamName"] = "β"
+    scenarios = [
+        (120, 95),
+        (110, 98),
+        (105, 102),
+        (105, 99),
+        (95, 120),
+        (98, 113),
+        (100, 104),
+        (98, 105),
+    ]
+    for hs, ascore in scenarios:
+        boxscore["homeTeam"]["score"] = hs
+        boxscore["awayTeam"]["score"] = ascore
+        title = _generate_post_title(boxscore, "homeTeam", "awayTeam")
+        mid = _connector_between_team_names(title, "α", "β")
+        assert len(mid) <= 22, repr(mid)
+
+
 def test_generate_post_title_blowout_win(boxscore):
     boxscore["homeTeam"]["score"] = 120
     boxscore["awayTeam"]["score"] = 95
@@ -206,6 +234,58 @@ def test_generate_post_title_close_loss(boxscore):
     assert "100 - 103" in title
 
 
+@patch(
+    "robo_burnie.scripts.post_game_thread.random.choice",
+    side_effect=lambda seq: seq[0],
+)
+def test_generate_post_title_margin_at_most_5_win_uses_nail_biter_bucket(
+    _mock_choice, boxscore
+):
+    boxscore["homeTeam"]["score"] = 104
+    boxscore["awayTeam"]["score"] = 100
+    title = _generate_post_title(boxscore, "homeTeam", "awayTeam")
+    assert "eke one out" in title
+
+
+@patch(
+    "robo_burnie.scripts.post_game_thread.random.choice",
+    side_effect=lambda seq: seq[0],
+)
+def test_generate_post_title_margin_6_to_10_win_uses_close_bucket(
+    _mock_choice, boxscore
+):
+    boxscore["homeTeam"]["score"] = 110
+    boxscore["awayTeam"]["score"] = 100
+    title = _generate_post_title(boxscore, "homeTeam", "awayTeam")
+    assert "hold off" in title
+
+
+@patch(
+    "robo_burnie.scripts.post_game_thread.random.choice",
+    side_effect=lambda seq: seq[0],
+)
+def test_generate_post_title_margin_at_most_5_loss_uses_nail_biter_bucket(
+    _mock_choice, boxscore
+):
+    boxscore["homeTeam"]["score"] = 100
+    boxscore["awayTeam"]["score"] = 104
+    title = _generate_post_title(boxscore, "homeTeam", "awayTeam")
+    assert "fall late to" in title
+
+
+@patch(
+    "robo_burnie.scripts.post_game_thread.random.choice",
+    side_effect=lambda seq: seq[0],
+)
+def test_generate_post_title_margin_6_to_10_loss_uses_close_bucket(
+    _mock_choice, boxscore
+):
+    boxscore["homeTeam"]["score"] = 100
+    boxscore["awayTeam"]["score"] = 110
+    title = _generate_post_title(boxscore, "homeTeam", "awayTeam")
+    assert "fall short vs" in title
+
+
 # ---------------------------------------------------------------------------
 # _generate_post_details
 # ---------------------------------------------------------------------------
@@ -222,7 +302,10 @@ def test_generate_post_details(mock_boxscore_link, boxscore):
     assert "[Post Game]" in title
     assert "110 - 100" in title
     assert "https://espn.com/boxscore" in selftext
-    assert "**Bam Adebayo** led the Miami Heat with **28** PTS." in selftext
+    assert (
+        "**Bam Adebayo** led the Miami Heat with **28** PTS, **12** REB, and **5** AST."
+        in selftext
+    )
     assert "| Player | MIN | PTS | REB | AST | STL | BLK | FG | 3PT | FT |" in selftext
     assert "### Miami Heat (110)" in selftext
     assert "### Boston Celtics (100)" in selftext
@@ -247,7 +330,10 @@ def test_generate_post_details_away_team(mock_boxscore_link, boxscore):
     assert "Heat" in title
     assert "### Miami Heat (110)" in selftext
     assert "### Boston Celtics (100)" in selftext
-    assert "**Bam Adebayo** led the Miami Heat with **28** PTS." in selftext
+    assert (
+        "**Bam Adebayo** led the Miami Heat with **28** PTS, **12** REB, and **5** AST."
+        in selftext
+    )
 
 
 # ---------------------------------------------------------------------------
