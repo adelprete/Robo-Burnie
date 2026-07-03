@@ -21,7 +21,7 @@ logging.basicConfig(
 
 
 def _main(action: str) -> None:
-    todays_game = _helpers.get_todays_game_v3(team=TEAM)
+    todays_game = _helpers.get_todays_game_auto(team=TEAM)
 
     if todays_game == {}:
         logging.info("No Game Today")
@@ -45,9 +45,17 @@ def _main(action: str) -> None:
 
 def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
 
-    cdn_game_data = _helpers.get_game_from_cdn_endpoint(todays_game["game_id"])
-    tv_channels = _get_tv_broadcasters(cdn_game_data, team)
-    radio_channels = _get_radio_broadcasters(cdn_game_data, team)
+    if _is_summer_league_game(todays_game):
+        game_data = {
+            "broadcasters": todays_game.get("broadcasters", {}),
+            "homeTeam": {"teamTricode": todays_game.get("home_tricode", "")},
+            "awayTeam": {"teamTricode": todays_game.get("away_tricode", "")},
+        }
+    else:
+        game_data = _helpers.get_game_from_cdn_endpoint(todays_game["game_id"])
+
+    tv_channels = _get_tv_broadcasters(game_data, team)
+    radio_channels = _get_radio_broadcasters(game_data, team)
 
     home_team = TEAM_ID_TO_INFO[str(todays_game["home_team_id"])]
     away_team = TEAM_ID_TO_INFO[str(todays_game["away_team_id"])]
@@ -95,7 +103,7 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
     )
 
     table = (
-        "| Game Details |  |\n"
+        "| Game Details | . |\n"
         "|--|--|\n"
         "| **Tip-Off Time** | {} |\n"
         "| **TV Broadcasts** | {} |\n"
@@ -117,16 +125,21 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
 
     self_text = self_text + table
 
-    standings_table = _build_standings_table(
-        todays_game["away_team_id"],
-        todays_game["home_team_id"],
-        away_team["tricode"],
-        home_team["tricode"],
-    )
-    if standings_table:
-        self_text = self_text + "\n\n" + standings_table
+    if not _is_summer_league_game(todays_game):
+        standings_table = _build_standings_table(
+            todays_game["away_team_id"],
+            todays_game["home_team_id"],
+            away_team["tricode"],
+            home_team["tricode"],
+        )
+        if standings_table:
+            self_text = self_text + "\n\n" + standings_table
 
     return title, self_text
+
+
+def _is_summer_league_game(todays_game: dict) -> bool:
+    return todays_game.get("game_label") == "Summer League"
 
 
 def _build_standings_table(
@@ -200,9 +213,22 @@ def _submit_post(subreddit: str, title: str, self_text: str) -> None:
 
 
 def _get_tv_broadcasters(game_data: dict, team: str):
+    broadcasters = game_data.get("broadcasters")
+    if not broadcasters:
+        return []
+
     national_tv_broadcasters = []
-    for broadcaster in game_data["broadcasters"]["nationalTvBroadcasters"]:
+    for broadcaster in broadcasters.get("nationalTvBroadcasters", []):
         national_tv_broadcasters.append(broadcaster["broadcasterAbbreviation"])
+
+    if not national_tv_broadcasters:
+        for broadcaster in broadcasters.get("nationalBroadcasters", []):
+            if broadcaster.get("broadcasterMedia") != "tv":
+                continue
+            abbreviation = broadcaster.get("broadcasterAbbreviation", "")
+            if abbreviation == "LeaguePass":
+                continue
+            national_tv_broadcasters.append(abbreviation)
 
     team_key = (
         "homeTvBroadcasters"
@@ -210,15 +236,21 @@ def _get_tv_broadcasters(game_data: dict, team: str):
         else "awayTvBroadcasters"
     )
     team_tv_broadcasters = []
-    for broadcaster in game_data["broadcasters"][team_key]:
+    for broadcaster in broadcasters.get(team_key, []):
         team_tv_broadcasters.append(broadcaster["broadcasterAbbreviation"])
 
-    return team_tv_broadcasters + national_tv_broadcasters
+    return _helpers.filter_tv_broadcasters(
+        team_tv_broadcasters + national_tv_broadcasters
+    )
 
 
 def _get_radio_broadcasters(game_data: dict, team: str):
+    broadcasters = game_data.get("broadcasters")
+    if not broadcasters:
+        return []
+
     national_radio_broadcasters = []
-    for broadcaster in game_data["broadcasters"]["nationalRadioBroadcasters"]:
+    for broadcaster in broadcasters.get("nationalRadioBroadcasters", []):
         national_radio_broadcasters.append(broadcaster["broadcasterAbbreviation"])
 
     team_key = (
@@ -227,7 +259,7 @@ def _get_radio_broadcasters(game_data: dict, team: str):
         else "awayRadioBroadcasters"
     )
     team_radio_broadcasters = []
-    for broadcaster in game_data["broadcasters"][team_key]:
+    for broadcaster in broadcasters.get(team_key, []):
         team_radio_broadcasters.append(broadcaster["broadcasterAbbreviation"])
 
     return team_radio_broadcasters + national_radio_broadcasters

@@ -14,10 +14,16 @@ __all__ = [
     "get_todays_games",
     "get_todays_games_from_schedule",
     "get_todays_game_v2",
+    "get_todays_game_v3",
+    "get_todays_game_auto",
     "get_todays_game",
     "get_boxscore_link",
     "gameclock_to_seconds",
     "get_espn_boxscore_link",
+    "get_espn_summer_league_boxscore_link",
+    "is_summer_league_game",
+    "is_amazon_prime_channel",
+    "filter_tv_broadcasters",
     "is_script_enabled",
     "set_script_enabled",
 ]
@@ -36,12 +42,40 @@ from nba_api.stats.library.parameters import GameDate
 
 from robo_burnie._settings import TEAM
 
+SUMMER_LEAGUE_IDS = ("13", "15", "16")
+ESPN_SUMMER_LEAGUE_PATHS = (
+    "nba-summer-california",
+    "nba-summer-las-vegas",
+    "nba-summer-utah",
+)
+
 
 def create_dictionary_list(headers, rows):
     result = []
     for row in rows:
         result.append(dict(zip(headers, row)))
     return result
+
+
+def is_amazon_prime_channel(label: str) -> bool:
+    n = label.strip().lower()
+    if not n:
+        return False
+    if n == "amazon":
+        return True
+    if "amazon" in n and "prime" in n:
+        return True
+    if n == "prime video":
+        return True
+    return False
+
+
+def filter_tv_broadcasters(channels: list[str]) -> list[str]:
+    """Drop Amazon Prime from the list when traditional TV networks are also listed."""
+    non_amazon = [c for c in channels if not is_amazon_prime_channel(c)]
+    if non_amazon:
+        return non_amazon
+    return channels
 
 
 def get_todays_standings():
@@ -250,11 +284,38 @@ def get_game_id_to_channels_map() -> dict:
     return game_id_to_channels
 
 
-def get_todays_game_v3(team=TEAM) -> dict:
+def _summer_league_season(dt: datetime | None = None) -> str:
+    dt = dt or get_current_datetime()
+    return f"{dt.year}-{(dt.year + 1) % 100:02d}"
+
+
+def _normalize_game_label(game_label: str) -> str:
+    if "Emirates NBA Cup" in game_label:
+        return "NBA Cup"
+    if "Summer League" in game_label:
+        return "Summer League"
+    return game_label
+
+
+def is_summer_league_game(game_id: str) -> bool:
+    return game_id.startswith(SUMMER_LEAGUE_IDS)
+
+
+def get_todays_game_v3(
+    team=TEAM, league_id: str = "00", season: str | None = None
+) -> dict:
     """Get today's game for specific team using scheduleleaguev2 endpoint
     ScheduleLeagueV2 provides a gameLabel that other endpoints do not provide.
     """
-    games = scheduleleaguev2.ScheduleLeagueV2().get_dict()["leagueSchedule"]
+    schedule_kwargs: dict[str, str] = {"league_id": league_id}
+    if season:
+        schedule_kwargs["season"] = season
+    elif league_id in SUMMER_LEAGUE_IDS:
+        schedule_kwargs["season"] = _summer_league_season()
+
+    games = scheduleleaguev2.ScheduleLeagueV2(**schedule_kwargs).get_dict()[
+        "leagueSchedule"
+    ]
     todays_date: str = get_todays_date_str(format="%m/%d/%Y")  # 10/02/2025
 
     todays_game = {}
@@ -267,11 +328,7 @@ def get_todays_game_v3(team=TEAM) -> dict:
                 ):
                     todays_game = {
                         "game_id": game["gameId"],
-                        "game_label": (
-                            "NBA Cup"
-                            if "Emirates NBA Cup" in game["gameLabel"]
-                            else game["gameLabel"]
-                        ),
+                        "game_label": _normalize_game_label(game["gameLabel"]),
                         "status_id": game["gameStatus"],
                         "status_text": game["gameStatusText"],
                         "home_team_id": game["homeTeam"]["teamId"],
@@ -280,10 +337,22 @@ def get_todays_game_v3(team=TEAM) -> dict:
                         "away_team_id": game["awayTeam"]["teamId"],
                         "away_team_wins": game["awayTeam"]["wins"],
                         "away_team_losses": game["awayTeam"]["losses"],
+                        "broadcasters": game.get("broadcasters", {}),
+                        "home_tricode": game["homeTeam"]["teamTricode"],
+                        "away_tricode": game["awayTeam"]["teamTricode"],
                     }
                     break
 
     return todays_game
+
+
+def get_todays_game_auto(team=TEAM) -> dict:
+    """Check Summer League schedules first, then fall back to regular season."""
+    for league_id in SUMMER_LEAGUE_IDS:
+        game = get_todays_game_v3(team=team, league_id=league_id)
+        if game:
+            return game
+    return get_todays_game_v3(team=team, league_id="00")
 
 
 def get_todays_game_v2(team=TEAM):
@@ -376,11 +445,18 @@ def get_boxscore_link(
     away_tricode: str, home_tricode: str, game_id: str, game_time: datetime = None
 ):
     """Create box score link for specific game"""
-    espn_box_score_link = get_espn_boxscore_link(
-        away_tricode=away_tricode,
-        home_tricode=home_tricode,
-        date=game_time,
-    )
+    if is_summer_league_game(game_id) and game_time:
+        espn_box_score_link = get_espn_summer_league_boxscore_link(
+            away_tricode=away_tricode,
+            home_tricode=home_tricode,
+            date=game_time,
+        )
+    else:
+        espn_box_score_link = get_espn_boxscore_link(
+            away_tricode=away_tricode,
+            home_tricode=home_tricode,
+            date=game_time,
+        )
     if espn_box_score_link:
         return espn_box_score_link
     else:
@@ -395,27 +471,68 @@ def gameclock_to_seconds(game_clock: str) -> float:
     return time_left
 
 
+def _espn_tricode(tricode: str) -> str:
+    # account for weird tricodes in ESPNs api.
+    # TODO: Move this check to a proper method. There will probably be more weirdness like this to handle.
+    if tricode == "SAS":
+        return "SA"
+    return tricode
+
+
+def _match_espn_event(event: dict, away_tricode: str, home_tricode: str) -> str | None:
+    competitors = event["competitions"][0]["competitors"]
+    home_abbr = None
+    away_abbr = None
+    for competitor in competitors:
+        abbreviation = competitor["team"]["abbreviation"]
+        if competitor.get("homeAway") == "home":
+            home_abbr = abbreviation
+        elif competitor.get("homeAway") == "away":
+            away_abbr = abbreviation
+
+    if home_abbr is None or away_abbr is None:
+        home_abbr = competitors[0]["team"]["abbreviation"]
+        away_abbr = competitors[1]["team"]["abbreviation"]
+
+    if away_abbr == away_tricode and home_abbr == home_tricode:
+        return event["links"][0]["href"]
+    return None
+
+
 def get_espn_boxscore_link(
     away_tricode: str, home_tricode: str, date: datetime
 ) -> str | None:
-
-    # account for weird tricodes in ESPNs api.
-    # TODO: Move this check to a proper method. There will probably be more weirdness like this to handle.
-    if away_tricode == "SAS":
-        away_tricode = "SA"
-    elif home_tricode == "SAS":
-        home_tricode = "SA"
+    away_tricode = _espn_tricode(away_tricode)
+    home_tricode = _espn_tricode(home_tricode)
 
     scoreboard_url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date.strftime('%Y%m%d')}"
     scoreboard = requests.get(scoreboard_url).json()
     for event in scoreboard["events"]:
-        if (
-            event["competitions"][0]["competitors"][1]["team"]["abbreviation"]
-            == away_tricode
-            and event["competitions"][0]["competitors"][0]["team"]["abbreviation"]
-            == home_tricode
-        ):
-            return event["links"][0]["href"]
+        link = _match_espn_event(event, away_tricode, home_tricode)
+        if link:
+            return link
+
+
+def get_espn_summer_league_boxscore_link(
+    away_tricode: str, home_tricode: str, date: datetime
+) -> str | None:
+    away_tricode = _espn_tricode(away_tricode)
+    home_tricode = _espn_tricode(home_tricode)
+    date_str = date.strftime("%Y%m%d")
+
+    for league_path in ESPN_SUMMER_LEAGUE_PATHS:
+        scoreboard_url = (
+            "https://site.api.espn.com/apis/site/v2/sports/basketball/"
+            f"{league_path}/scoreboard?dates={date_str}"
+        )
+        response = requests.get(scoreboard_url)
+        if response.status_code != 200:
+            continue
+
+        for event in response.json().get("events", []):
+            link = _match_espn_event(event, away_tricode, home_tricode)
+            if link:
+                return link
 
 
 def is_script_enabled(script_name: str) -> bool:

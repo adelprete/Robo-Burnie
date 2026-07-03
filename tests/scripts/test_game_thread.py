@@ -126,6 +126,70 @@ def test_get_radio_broadcasters_away_team(cdn_game_data):
     assert result == ["WBZ"]
 
 
+def test_get_tv_broadcasters_missing_cdn_data():
+    result = _get_tv_broadcasters({}, "MIA")
+    assert result == []
+
+
+def test_get_tv_broadcasters_summer_league_schedule_format():
+    game_data = {
+        "homeTeam": {"teamTricode": "SAS"},
+        "awayTeam": {"teamTricode": "MIA"},
+        "broadcasters": {
+            "nationalBroadcasters": [
+                {
+                    "broadcasterMedia": "tv",
+                    "broadcasterAbbreviation": "ESPN",
+                },
+                {
+                    "broadcasterMedia": "tv",
+                    "broadcasterAbbreviation": "NBA TV",
+                },
+                {
+                    "broadcasterMedia": "tv",
+                    "broadcasterAbbreviation": "LeaguePass",
+                },
+                {
+                    "broadcasterMedia": "tv",
+                    "broadcasterAbbreviation": "Amazon",
+                },
+            ],
+            "homeTvBroadcasters": [],
+            "awayTvBroadcasters": [],
+        },
+    }
+
+    result = _get_tv_broadcasters(game_data, "MIA")
+
+    assert result == ["ESPN", "NBA TV"]
+
+
+def test_get_tv_broadcasters_keeps_amazon_when_only_channel():
+    game_data = {
+        "homeTeam": {"teamTricode": "SAS"},
+        "awayTeam": {"teamTricode": "MIA"},
+        "broadcasters": {
+            "nationalBroadcasters": [
+                {
+                    "broadcasterMedia": "tv",
+                    "broadcasterAbbreviation": "Amazon",
+                },
+            ],
+            "homeTvBroadcasters": [],
+            "awayTvBroadcasters": [],
+        },
+    }
+
+    result = _get_tv_broadcasters(game_data, "MIA")
+
+    assert result == ["Amazon"]
+
+
+def test_get_radio_broadcasters_missing_cdn_data():
+    result = _get_radio_broadcasters({}, "MIA")
+    assert result == []
+
+
 # ---------------------------------------------------------------------------
 # _build_standings_table
 # ---------------------------------------------------------------------------
@@ -234,6 +298,42 @@ def test_generate_post_details_includes_standings(
     assert "| standings |" in body
 
 
+@patch(
+    "robo_burnie.scripts.game_thread._build_standings_table",
+    return_value="| standings |",
+)
+@patch(
+    "robo_burnie.scripts.game_thread._helpers.get_boxscore_link",
+    return_value="https://espn.com/summer-league/boxscore",
+)
+def test_generate_post_details_summer_league_skips_standings(
+    mock_boxscore_link, mock_standings_table, todays_game
+):
+    todays_game["game_label"] = "Summer League"
+    todays_game["game_id"] = "1322600001"
+    todays_game["home_tricode"] = "SAS"
+    todays_game["away_tricode"] = "MIA"
+    todays_game["broadcasters"] = {
+        "nationalBroadcasters": [
+            {"broadcasterMedia": "tv", "broadcasterAbbreviation": "ESPN"},
+            {"broadcasterMedia": "tv", "broadcasterAbbreviation": "NBA TV"},
+        ],
+        "homeTvBroadcasters": [],
+        "awayTvBroadcasters": [],
+        "nationalRadioBroadcasters": [],
+        "homeRadioBroadcasters": [],
+        "awayRadioBroadcasters": [],
+    }
+
+    title, body = _generate_post_details(todays_game, "MIA")
+
+    assert "[Game Thread] [Summer League]" in title
+    assert "ESPN" in body
+    assert "NBA TV" in body
+    assert "| standings |" not in body
+    mock_standings_table.assert_not_called()
+
+
 # ---------------------------------------------------------------------------
 # _submit_post
 # ---------------------------------------------------------------------------
@@ -284,7 +384,7 @@ def test_submit_post_unstickies_post_game_thread():
 # ---------------------------------------------------------------------------
 
 
-@patch("robo_burnie.scripts.game_thread._helpers.get_todays_game_v3")
+@patch("robo_burnie.scripts.game_thread._helpers.get_todays_game_auto")
 def test_main_no_game_today(mock_get_game):
     mock_get_game.return_value = {}
     _main("create")
@@ -294,7 +394,7 @@ def test_main_no_game_today(mock_get_game):
 @patch("robo_burnie.scripts.game_thread._submit_post")
 @patch("robo_burnie.scripts.game_thread.praw.Reddit")
 @patch("robo_burnie.scripts.game_thread._generate_post_details")
-@patch("robo_burnie.scripts.game_thread._helpers.get_todays_game_v3")
+@patch("robo_burnie.scripts.game_thread._helpers.get_todays_game_auto")
 def test_main_game_not_started(
     mock_get_game, mock_gen_details, mock_reddit_cls, mock_submit
 ):
@@ -322,7 +422,7 @@ def test_main_game_not_started(
 @patch("robo_burnie.scripts.game_thread._submit_post")
 @patch("robo_burnie.scripts.game_thread.praw.Reddit")
 @patch("robo_burnie.scripts.game_thread._generate_post_details")
-@patch("robo_burnie.scripts.game_thread._helpers.get_todays_game_v3")
+@patch("robo_burnie.scripts.game_thread._helpers.get_todays_game_auto")
 def test_main_game_already_started(
     mock_get_game, mock_gen_details, mock_reddit_cls, mock_submit
 ):
