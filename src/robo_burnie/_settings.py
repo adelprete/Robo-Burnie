@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-SUBREDDIT = "heat"
+SUBREDDIT = "heatcss"
 TEAM = "MIA"
 
 FLAIR_IDS: dict[str, dict[str, str]] = {
