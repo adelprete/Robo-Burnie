@@ -265,6 +265,8 @@ def get_game_id_to_channels_map() -> dict:
             for stream in game.get("streams", []):
                 if "nba tv" in stream.get("title").lower():
                     game_id_to_channels[game["gameId"]].add("NBA TV")
+                elif "espnu" in stream.get("title").lower():
+                    game_id_to_channels[game["gameId"]].add("ESPNU")
                 elif "espn" in stream.get("title").lower():
                     game_id_to_channels[game["gameId"]].add("ESPN")
                 elif "tnt" in stream.get("title").lower():
