@@ -8,6 +8,7 @@ from robo_burnie._helpers import (
     get_boxscore_link,
     get_espn_boxscore_link,
     get_espn_summer_league_boxscore_link,
+    get_game_id_to_channels_map,
     get_todays_game_auto,
     get_todays_game_v3,
     get_todays_standings,
@@ -25,6 +26,28 @@ def league_standings_response():
 def espn_scoreboard_response():
     with open("tests/test_data/espn_api/scoreboard.json") as f:
         return json.load(f)
+
+
+@patch("robo_burnie._helpers.requests.get")
+def test_get_game_id_to_channels_map_espnu(mock_requests_get):
+    mock_requests_get.return_value.status_code = 200
+    mock_requests_get.return_value.json.return_value = {
+        "channels": {
+            "games": [
+                {
+                    "gameId": "0022500001",
+                    "streams": [
+                        {"title": "Watch on ESPNU"},
+                        {"title": "Watch on ESPN"},
+                    ],
+                }
+            ]
+        }
+    }
+
+    result = get_game_id_to_channels_map()
+
+    assert result["0022500001"] == {"ESPNU", "ESPN"}
 
 
 def test_get_todays_standings(league_standings_response):
