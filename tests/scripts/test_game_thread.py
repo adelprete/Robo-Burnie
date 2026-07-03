@@ -185,6 +185,27 @@ def test_get_tv_broadcasters_keeps_amazon_when_only_channel():
     assert result == ["Amazon"]
 
 
+def test_get_tv_broadcasters_hides_amazon_when_regional_tv_exists():
+    game_data = {
+        "homeTeam": {"teamTricode": "MIA"},
+        "awayTeam": {"teamTricode": "BOS"},
+        "broadcasters": {
+            "nationalBroadcasters": [
+                {
+                    "broadcasterMedia": "tv",
+                    "broadcasterAbbreviation": "Amazon",
+                },
+            ],
+            "homeTvBroadcasters": [{"broadcasterAbbreviation": "BSSUN"}],
+            "awayTvBroadcasters": [],
+        },
+    }
+
+    result = _get_tv_broadcasters(game_data, "MIA")
+
+    assert result == ["BSSUN"]
+
+
 def test_get_radio_broadcasters_missing_cdn_data():
     result = _get_radio_broadcasters({}, "MIA")
     assert result == []

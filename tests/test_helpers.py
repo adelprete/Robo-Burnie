@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from robo_burnie._helpers import (
+    filter_tv_broadcasters,
+    format_game_tv_broadcasters,
     get_boxscore_link,
     get_espn_boxscore_link,
     get_espn_summer_league_boxscore_link,
@@ -12,6 +14,7 @@ from robo_burnie._helpers import (
     get_todays_game_auto,
     get_todays_game_v3,
     get_todays_standings,
+    is_amazon_prime_channel,
     is_summer_league_game,
 )
 
@@ -48,6 +51,63 @@ def test_get_game_id_to_channels_map_espnu(mock_requests_get):
     result = get_game_id_to_channels_map()
 
     assert result["0022500001"] == {"ESPNU", "ESPN"}
+
+
+@pytest.mark.parametrize(
+    "label, expected",
+    [
+        ("Amazon", True),
+        ("Amazon Prime Video", True),
+        ("Prime Video", True),
+        ("ESPN", False),
+        ("BSSUN", False),
+    ],
+)
+def test_is_amazon_prime_channel(label, expected):
+    assert is_amazon_prime_channel(label) is expected
+
+
+@pytest.mark.parametrize(
+    "channels, expected",
+    [
+        (["ESPN", "Amazon Prime Video"], ["ESPN"]),
+        (["Amazon Prime Video", "TNT"], ["TNT"]),
+        (["Amazon Prime Video"], ["Amazon Prime Video"]),
+        (["Amazon"], ["Amazon"]),
+        (["BSSUN", "Amazon"], ["BSSUN"]),
+    ],
+)
+def test_filter_tv_broadcasters(channels, expected):
+    assert filter_tv_broadcasters(channels) == expected
+
+
+def test_format_game_tv_broadcasters_omits_amazon_with_national_linear():
+    broadcasters = {
+        "nationalBroadcasters": [
+            {"broadcasterMedia": "tv", "broadcasterDisplay": "ESPN"},
+            {"broadcasterMedia": "tv", "broadcasterDisplay": "Amazon Prime Video"},
+        ],
+    }
+    assert format_game_tv_broadcasters(broadcasters) == "ESPN"
+
+
+def test_format_game_tv_broadcasters_shows_regional_when_national_is_amazon_only():
+    broadcasters = {
+        "nationalBroadcasters": [
+            {"broadcasterMedia": "tv", "broadcasterDisplay": "Amazon Prime Video"},
+        ],
+        "homeTvBroadcasters": [{"broadcasterAbbreviation": "BSSUN"}],
+    }
+    assert format_game_tv_broadcasters(broadcasters) == "BSSUN"
+
+
+def test_format_game_tv_broadcasters_keeps_amazon_when_only_option():
+    broadcasters = {
+        "nationalBroadcasters": [
+            {"broadcasterMedia": "tv", "broadcasterDisplay": "Amazon Prime Video"},
+        ],
+    }
+    assert format_game_tv_broadcasters(broadcasters) == "Amazon Prime Video"
 
 
 def test_get_todays_standings(league_standings_response):
