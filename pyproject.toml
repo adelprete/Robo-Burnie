@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "~3.13"
 requests = "^2.32.3"
-praw = "^7.8.1"
+praw = "^8.0.2"
 nba_api = "^1.11.0"
 dateutils = "^0.6.12"
 google-api-python-client = "^2.184"
