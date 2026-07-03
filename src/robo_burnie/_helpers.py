@@ -61,21 +61,69 @@ def is_amazon_prime_channel(label: str) -> bool:
     n = label.strip().lower()
     if not n:
         return False
-    if n == "amazon":
+    if n in ("amazon", "amazon prime video", "prime video"):
         return True
     if "amazon" in n and "prime" in n:
-        return True
-    if n == "prime video":
         return True
     return False
 
 
 def filter_tv_broadcasters(channels: list[str]) -> list[str]:
-    """Drop Amazon Prime from the list when traditional TV networks are also listed."""
+    """Drop Amazon/Prime from the list when any other TV broadcaster is also listed."""
     non_amazon = [c for c in channels if not is_amazon_prime_channel(c)]
     if non_amazon:
         return non_amazon
     return channels
+
+
+def _broadcaster_label(broadcaster: dict) -> str:
+    return (
+        broadcaster.get("broadcasterDisplay")
+        or broadcaster.get("broadcasterAbbreviation")
+        or ""
+    ).strip()
+
+
+def _collect_schedule_tv_broadcasters(
+    broadcasters: dict,
+) -> tuple[list[str], list[str]]:
+    national: list[str] = []
+    for broadcaster in broadcasters.get("nationalTvBroadcasters", []):
+        label = _broadcaster_label(broadcaster)
+        if label:
+            national.append(label)
+
+    for broadcaster in broadcasters.get("nationalBroadcasters", []):
+        if broadcaster.get("broadcasterMedia") != "tv":
+            continue
+        label = _broadcaster_label(broadcaster)
+        if label and label != "LeaguePass":
+            national.append(label)
+
+    regional: list[str] = []
+    for key in ("homeTvBroadcasters", "awayTvBroadcasters"):
+        for broadcaster in broadcasters.get(key, []):
+            label = _broadcaster_label(broadcaster)
+            if label:
+                regional.append(label)
+
+    return national, regional
+
+
+def format_game_tv_broadcasters(broadcasters: dict) -> str:
+    """Build a TV display string, hiding Amazon unless it's the only broadcaster."""
+    national, regional = _collect_schedule_tv_broadcasters(broadcasters)
+    filtered = filter_tv_broadcasters(national + regional)
+
+    national_kept = [channel for channel in national if channel in filtered]
+    if national_kept:
+        return ", ".join(national_kept)
+
+    regional_kept = [channel for channel in regional if channel in filtered]
+    if regional_kept:
+        return ", ".join(regional_kept)
+
+    return ", ".join(filtered)
 
 
 def get_todays_standings():
@@ -203,7 +251,9 @@ def get_todays_games_cdn() -> list[dict]:
                 "game_status_id": game["gameStatus"],
                 "live_period": game["period"],
                 "natl_tv_broadcaster_abbreviation": ", ".join(
-                    game_id_to_channels_map.get(game["gameId"], [])
+                    filter_tv_broadcasters(
+                        list(game_id_to_channels_map.get(game["gameId"], []))
+                    )
                 ),
                 "home_team_id": game["homeTeam"]["teamId"],
                 "visitor_team_id": game["awayTeam"]["teamId"],
@@ -228,18 +278,13 @@ def get_todays_games_from_schedule() -> dict:
     for game_date in games_data["gameDates"]:
         if todays_date in game_date["gameDate"]:
             for game in game_date["games"]:
-                national_tv = [
-                    b["broadcasterDisplay"]
-                    for b in game.get("broadcasters", {}).get(
-                        "nationalBroadcasters", []
-                    )
-                    if b.get("broadcasterMedia") == "tv"
-                ]
                 games[game["gameId"]] = {
                     "game_status_text": game["gameStatusText"],
                     "game_status_id": game["gameStatus"],
                     "live_period": 0,
-                    "natl_tv_broadcaster_abbreviation": ", ".join(national_tv),
+                    "natl_tv_broadcaster_abbreviation": format_game_tv_broadcasters(
+                        game.get("broadcasters", {})
+                    ),
                     "home_team_id": game["homeTeam"]["teamId"],
                     "visitor_team_id": game["awayTeam"]["teamId"],
                     "home_name": game["homeTeam"]["teamName"],
