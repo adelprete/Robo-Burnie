@@ -7,7 +7,11 @@ import pytest
 from robo_burnie._helpers import (
     get_boxscore_link,
     get_espn_boxscore_link,
+    get_espn_summer_league_boxscore_link,
+    get_todays_game_auto,
+    get_todays_game_v3,
     get_todays_standings,
+    is_summer_league_game,
 )
 
 
@@ -78,6 +82,148 @@ def test_get_boxscore_link(
             away_tricode=away_tricode, home_tricode=home_tricode, date=game_time
         )
         assert result == expected_link
+
+
+@pytest.mark.parametrize(
+    "game_id, expected",
+    [
+        ("1322600001", True),
+        ("1522400010", True),
+        ("1622600001", True),
+        ("0022400100", False),
+    ],
+)
+def test_is_summer_league_game(game_id, expected):
+    assert is_summer_league_game(game_id) is expected
+
+
+@patch("robo_burnie._helpers.get_todays_game_v3")
+def test_get_todays_game_auto_prefers_summer_league(mock_get_game_v3):
+    summer_game = {"game_id": "1322600001", "game_label": "Summer League"}
+    mock_get_game_v3.side_effect = [summer_game]
+
+    result = get_todays_game_auto(team="MIA")
+
+    assert result == summer_game
+    mock_get_game_v3.assert_called_once_with(team="MIA", league_id="13")
+
+
+@patch("robo_burnie._helpers.get_todays_game_v3")
+def test_get_todays_game_auto_falls_back_to_regular_season(mock_get_game_v3):
+    regular_game = {"game_id": "0022400100", "game_label": ""}
+    mock_get_game_v3.side_effect = [{}, {}, {}, regular_game]
+
+    result = get_todays_game_auto(team="MIA")
+
+    assert result == regular_game
+    assert mock_get_game_v3.call_count == 4
+    mock_get_game_v3.assert_any_call(team="MIA", league_id="00")
+
+
+@patch("robo_burnie._helpers.scheduleleaguev2.ScheduleLeagueV2")
+def test_get_todays_game_v3_normalizes_summer_league_label(mock_schedule):
+    mock_schedule.return_value.get_dict.return_value = {
+        "leagueSchedule": {
+            "gameDates": [
+                {
+                    "gameDate": "07/03/2026 00:00:00",
+                    "games": [
+                        {
+                            "gameId": "1322600001",
+                            "gameLabel": "California Classic Summer League",
+                            "gameStatus": 1,
+                            "gameStatusText": "4:00 PM ET",
+                            "homeTeam": {
+                                "teamId": 1610612759,
+                                "teamTricode": "SAS",
+                                "wins": 0,
+                                "losses": 1,
+                            },
+                            "awayTeam": {
+                                "teamId": 1610612748,
+                                "teamTricode": "MIA",
+                                "wins": 1,
+                                "losses": 0,
+                            },
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+
+    with patch("robo_burnie._helpers.get_todays_date_str", return_value="07/03/2026"):
+        result = get_todays_game_v3(team="MIA", league_id="13")
+
+    assert result["game_label"] == "Summer League"
+    mock_schedule.assert_called_once_with(league_id="13", season="2026-27")
+
+
+@pytest.mark.parametrize(
+    "away_tricode, home_tricode, game_id, espn_response, expected_link",
+    [
+        (
+            "MIA",
+            "SAS",
+            "1322600001",
+            "https://www.espn.com/nba-summer-league/game/_/gameId/401881933",
+            "https://www.espn.com/nba-summer-league/game/_/gameId/401881933",
+        ),
+    ],
+)
+def test_get_boxscore_link_summer_league(
+    away_tricode, home_tricode, game_id, espn_response, expected_link
+):
+    game_time = datetime.now(timezone.utc)
+    with patch(
+        "robo_burnie._helpers.get_espn_summer_league_boxscore_link",
+        return_value=espn_response,
+    ) as mock_espn_summer_link:
+        result = get_boxscore_link(away_tricode, home_tricode, game_id, game_time)
+        mock_espn_summer_link.assert_called_once_with(
+            away_tricode=away_tricode, home_tricode=home_tricode, date=game_time
+        )
+        assert result == expected_link
+
+
+def test_get_espn_summer_league_boxscore_link():
+    game_time = datetime(2026, 7, 3, tzinfo=timezone.utc)
+    scoreboard_response = {
+        "events": [
+            {
+                "links": [
+                    {
+                        "href": "https://www.espn.com/nba-summer-league/game/_/gameId/401881933"
+                    }
+                ],
+                "competitions": [
+                    {
+                        "competitors": [
+                            {
+                                "homeAway": "home",
+                                "team": {"abbreviation": "SA"},
+                            },
+                            {
+                                "homeAway": "away",
+                                "team": {"abbreviation": "MIA"},
+                            },
+                        ]
+                    }
+                ],
+            }
+        ]
+    }
+
+    with patch("robo_burnie._helpers.requests.get") as mock_requests_get:
+        mock_requests_get.return_value.status_code = 200
+        mock_requests_get.return_value.json.return_value = scoreboard_response
+        result = get_espn_summer_league_boxscore_link("MIA", "SAS", game_time)
+
+    mock_requests_get.assert_called_once_with(
+        "https://site.api.espn.com/apis/site/v2/sports/basketball/"
+        "nba-summer-california/scoreboard?dates=20260703"
+    )
+    assert result == "https://www.espn.com/nba-summer-league/game/_/gameId/401881933"
 
 
 @pytest.mark.parametrize(
