@@ -9,14 +9,11 @@ __all__ = [
     "get_boxscore",
     "get_full_team_schedule",
     "get_game_from_cdn_endpoint",
-    "get_current_datetime",
     "get_todays_date_str",
-    "get_todays_games",
     "get_todays_games_from_schedule",
     "get_todays_game_v2",
     "get_todays_game_v3",
     "get_todays_game_auto",
-    "get_todays_game",
     "get_boxscore_link",
     "gameclock_to_seconds",
     "get_espn_boxscore_link",
@@ -38,7 +35,6 @@ from nba_api.stats.endpoints import (
     scheduleleaguev2,
     scoreboardv2,
 )
-from nba_api.stats.library.parameters import GameDate
 
 from robo_burnie._settings import TEAM
 
@@ -48,13 +44,21 @@ ESPN_SUMMER_LEAGUE_PATHS = (
     "nba-summer-las-vegas",
     "nba-summer-utah",
 )
-
-
-def create_dictionary_list(headers, rows):
-    result = []
-    for row in rows:
-        result.append(dict(zip(headers, row)))
-    return result
+SCHEDULE_LEAGUE_V2_CDN_URL = (
+    "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
+)
+_STREAM_TITLE_TO_CHANNEL = (
+    ("nba tv", "NBA TV"),
+    ("espnu", "ESPNU"),
+    ("espn", "ESPN"),
+    ("tnt", "TNT"),
+    ("abc", "ABC"),
+    ("nbc", "NBC"),
+    ("peacock", "Peacock"),
+    ("telemundo", "Telemundo"),
+    ("amazon", "Amazon Prime Video"),
+    ("prime", "Amazon Prime Video"),
+)
 
 
 def is_amazon_prime_channel(label: str) -> bool:
@@ -153,10 +157,12 @@ def get_boxscore(game_id: str) -> dict:
     return box_score
 
 
+def _fetch_season_schedule_cdn() -> dict:
+    return requests.get(SCHEDULE_LEAGUE_V2_CDN_URL).json()
+
+
 def get_full_team_schedule(team_name: str) -> List[dict]:
-    schedule = requests.get(
-        "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
-    ).json()
+    schedule = _fetch_season_schedule_cdn()
 
     teams_games = []
     for game_date in schedule["leagueSchedule"]["gameDates"]:
@@ -171,9 +177,7 @@ def get_full_team_schedule(team_name: str) -> List[dict]:
 
 
 def get_game_from_cdn_endpoint(game_id: str) -> dict:
-    schedule = requests.get(
-        "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
-    ).json()
+    schedule = _fetch_season_schedule_cdn()
 
     for game_date in schedule["leagueSchedule"]["gameDates"]:
         for game in game_date["games"]:
@@ -192,52 +196,32 @@ def get_todays_date_str(hours_offset=0, format: str = "%Y%m%d") -> str:
     return (datetime.now() - timedelta(hours=hours_offset)).strftime(format)
 
 
-def get_todays_games() -> list[dict]:
-    """Get all games for the day"""
-    games = {}
-    game_date = GameDate().get_date_format(get_current_datetime())
-    scoreboard = scoreboardv2.ScoreboardV2(game_date=game_date).get_dict()["resultSets"]
+def _channel_from_stream_title(title: str) -> str | None:
+    lowered = title.lower()
+    for keyword, channel in _STREAM_TITLE_TO_CHANNEL:
+        if keyword in lowered:
+            return channel
+    return None
 
-    # Walkthrough each scoreboard section and build out the data for each game
-    game_headers = create_dictionary_list(
-        scoreboard[0]["headers"], scoreboard[0]["rowSet"]
-    )
-    for game in game_headers:
-        games[game["GAME_ID"]] = {
-            "game_status_text": game["GAME_STATUS_TEXT"],
-            "game_status_id": game["GAME_STATUS_ID"],
-            "live_period": game["LIVE_PERIOD"],
-            "live_period_time_bcast": game["LIVE_PERIOD_TIME_BCAST"],
-            "home_team_id": game["HOME_TEAM_ID"],
-            "visitor_team_id": game["VISITOR_TEAM_ID"],
-            "natl_tv_broadcaster_abbreviation": game[
-                "NATL_TV_BROADCASTER_ABBREVIATION"
-            ],
-        }
 
-    line_scores = create_dictionary_list(
-        scoreboard[1]["headers"], scoreboard[1]["rowSet"]
-    )
-    for line_score in line_scores:
-        team_prefix = "home"
-        if line_score["TEAM_ID"] == games[line_score["GAME_ID"]]["visitor_team_id"]:
-            team_prefix = "visitor"
-
-        games[line_score["GAME_ID"]].update(
-            {
-                f"{team_prefix}_name": line_score["TEAM_NAME"],
-                f"{team_prefix}_abbreviation": line_score["TEAM_ABBREVIATION"],
-                f"{team_prefix}_city_name": line_score["TEAM_CITY_NAME"],
-                f"{team_prefix}_wins_losses": line_score["TEAM_WINS_LOSSES"],
-                f"{team_prefix}_pts": line_score["PTS"],
-            }
-        )
-
-    return games
+def get_game_id_to_channels_map() -> dict:
+    game_id_to_channels = defaultdict(set)
+    url = "https://cdn.nba.com/static/json/liveData/channels/v2/channels_00.json"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        for game in data.get("channels", {}).get("games", []):
+            for stream in game.get("streams", []):
+                title = stream.get("title")
+                if not title:
+                    continue
+                channel = _channel_from_stream_title(title)
+                if channel:
+                    game_id_to_channels[game["gameId"]].add(channel)
+    return game_id_to_channels
 
 
 def get_todays_games_cdn() -> list[dict]:
-
     game_id_to_channels_map: dict = get_game_id_to_channels_map()
 
     url = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json"
@@ -298,37 +282,6 @@ def get_todays_games_from_schedule() -> dict:
                 }
             break
     return games
-
-
-def get_game_id_to_channels_map() -> dict:
-    game_id_to_channels = defaultdict(set)
-    url = "https://cdn.nba.com/static/json/liveData/channels/v2/channels_00.json"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        for game in data.get("channels", {}).get("games", []):
-            for stream in game.get("streams", []):
-                if "nba tv" in stream.get("title").lower():
-                    game_id_to_channels[game["gameId"]].add("NBA TV")
-                elif "espnu" in stream.get("title").lower():
-                    game_id_to_channels[game["gameId"]].add("ESPNU")
-                elif "espn" in stream.get("title").lower():
-                    game_id_to_channels[game["gameId"]].add("ESPN")
-                elif "tnt" in stream.get("title").lower():
-                    game_id_to_channels[game["gameId"]].add("TNT")
-                elif "abc" in stream.get("title").lower():
-                    game_id_to_channels[game["gameId"]].add("ABC")
-                elif "nbc" in stream.get("title").lower():
-                    game_id_to_channels[game["gameId"]].add("NBC")
-                elif "peacock" in stream.get("title").lower():
-                    game_id_to_channels[game["gameId"]].add("Peacock")
-                elif "telemundo" in stream.get("title").lower():
-                    game_id_to_channels[game["gameId"]].add("Telemundo")
-                elif "amazon" in stream.get("title").lower():
-                    game_id_to_channels[game["gameId"]].add("Amazon Prime Video")
-                elif "prime" in stream.get("title").lower():
-                    game_id_to_channels[game["gameId"]].add("Amazon Prime Video")
-    return game_id_to_channels
 
 
 def _summer_league_season(dt: datetime | None = None) -> str:
@@ -457,35 +410,6 @@ def get_todays_game_v2(team=TEAM):
     }
 
     return game_data
-
-
-def get_todays_game(team=TEAM):
-    """Get today's game for specific team"""
-    today = datetime.utcnow() - timedelta(hours=5)
-    games = requests.get(
-        "https://data.nba.net/prod/v2/{}{}{}/scoreboard.json".format(
-            today.strftime("%Y"), today.strftime("%m"), today.strftime("%d")
-        )
-    ).json()
-
-    todays_game = {}
-    for game in games["games"]:
-        if game["vTeam"]["triCode"] == team or game["hTeam"]["triCode"] == team:
-            todays_game = game
-
-    # Grab the team wins and losses from another source because our
-    # orignal source stopped providing them for some reason.
-    if todays_game:
-        standings = get_todays_standings()
-        for team in standings:
-            if todays_game["vTeam"]["teamId"] == str(team["TeamID"]):
-                todays_game["vTeam"]["win"] = team["WINS"]
-                todays_game["vTeam"]["loss"] = team["LOSSES"]
-            if todays_game["hTeam"]["teamId"] == str(team["TeamID"]):
-                todays_game["hTeam"]["win"] = team["WINS"]
-                todays_game["hTeam"]["loss"] = team["LOSSES"]
-
-    return todays_game
 
 
 def get_boxscore_link(
