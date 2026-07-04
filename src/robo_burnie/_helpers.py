@@ -45,6 +45,7 @@ ESPN_SUMMER_LEAGUE_PATHS = (
     "nba-summer-las-vegas",
     "nba-summer-utah",
 )
+SUMMER_LEAGUE_ID_TO_ESPN_PATH = dict(zip(SUMMER_LEAGUE_IDS, ESPN_SUMMER_LEAGUE_PATHS))
 SCHEDULE_LEAGUE_V2_CDN_URL = (
     "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
 )
@@ -265,19 +266,30 @@ def get_todays_games_cdn(
     game_id_to_channels_map: dict = get_game_id_to_channels_map(league_ids)
 
     games = {}
+    espn_fallback_league_ids: list[str] = []
     for league_id in league_ids:
         response = requests.get(
             _scoreboard_cdn_url(league_id), timeout=HTTP_REQUEST_TIMEOUT
         )
         if response.status_code != 200:
+            if league_id in SUMMER_LEAGUE_ID_TO_ESPN_PATH:
+                espn_fallback_league_ids.append(league_id)
             continue
         data = response.json()
-        for game in data.get("scoreboard", {}).get("games", []):
+        league_games = data.get("scoreboard", {}).get("games", [])
+        if league_id in SUMMER_LEAGUE_ID_TO_ESPN_PATH and not league_games:
+            espn_fallback_league_ids.append(league_id)
+        for game in league_games:
             games[game["gameId"]] = _parse_scoreboard_game(
                 game, game_id_to_channels_map
             )
-    for game_id, game in _get_todays_summer_league_games_espn().items():
-        games.setdefault(game_id, game)
+    if espn_fallback_league_ids:
+        espn_paths = tuple(
+            SUMMER_LEAGUE_ID_TO_ESPN_PATH[league_id]
+            for league_id in espn_fallback_league_ids
+        )
+        for game_id, game in _get_todays_summer_league_games_espn(espn_paths).items():
+            games.setdefault(game_id, game)
     return games
 
 
@@ -350,24 +362,38 @@ def _parse_espn_scoreboard_event(event: dict) -> dict | None:
     }
 
 
-def _get_todays_summer_league_games_espn() -> dict:
+def _espn_scoreboard_url(league_path: str, date_str: str) -> str:
+    return (
+        "https://site.api.espn.com/apis/site/v2/sports/basketball/"
+        f"{league_path}/scoreboard?dates={date_str}"
+    )
+
+
+def _iter_espn_summer_league_events(
+    date_str: str,
+    league_paths: tuple[str, ...] = ESPN_SUMMER_LEAGUE_PATHS,
+):
+    for league_path in league_paths:
+        response = requests.get(
+            _espn_scoreboard_url(league_path, date_str),
+            timeout=HTTP_REQUEST_TIMEOUT,
+        )
+        if response.status_code != 200:
+            continue
+        yield from response.json().get("events", [])
+
+
+def _get_todays_summer_league_games_espn(
+    league_paths: tuple[str, ...] = ESPN_SUMMER_LEAGUE_PATHS,
+) -> dict:
     """Summer league scoreboard CDN endpoints are often blocked; ESPN is the fallback."""
     games: dict = {}
     date_str = get_todays_date_str(format="%Y%m%d")
 
-    for league_path in ESPN_SUMMER_LEAGUE_PATHS:
-        scoreboard_url = (
-            "https://site.api.espn.com/apis/site/v2/sports/basketball/"
-            f"{league_path}/scoreboard?dates={date_str}"
-        )
-        response = requests.get(scoreboard_url, timeout=HTTP_REQUEST_TIMEOUT)
-        if response.status_code != 200:
-            continue
-
-        for event in response.json().get("events", []):
-            parsed = _parse_espn_scoreboard_event(event)
-            if parsed is not None:
-                games[event["id"]] = parsed
+    for event in _iter_espn_summer_league_events(date_str, league_paths):
+        parsed = _parse_espn_scoreboard_event(event)
+        if parsed is not None:
+            games[event["id"]] = parsed
 
     return games
 
@@ -570,19 +596,12 @@ def _espn_tricode(tricode: str) -> str:
 
 
 def _match_espn_event(event: dict, away_tricode: str, home_tricode: str) -> str | None:
-    competitors = event["competitions"][0]["competitors"]
-    home_abbr = None
-    away_abbr = None
-    for competitor in competitors:
-        abbreviation = competitor["team"]["abbreviation"]
-        if competitor.get("homeAway") == "home":
-            home_abbr = abbreviation
-        elif competitor.get("homeAway") == "away":
-            away_abbr = abbreviation
-
-    if home_abbr is None or away_abbr is None:
-        home_abbr = competitors[0]["team"]["abbreviation"]
-        away_abbr = competitors[1]["team"]["abbreviation"]
+    home_away = _espn_home_away_competitors(event["competitions"][0])
+    if home_away is None:
+        return None
+    home, away = home_away
+    away_abbr = away["team"]["abbreviation"]
+    home_abbr = home["team"]["abbreviation"]
 
     if away_abbr == away_tricode and home_abbr == home_tricode:
         return event["links"][0]["href"]
@@ -610,19 +629,10 @@ def get_espn_summer_league_boxscore_link(
     home_tricode = _espn_tricode(home_tricode)
     date_str = date.strftime("%Y%m%d")
 
-    for league_path in ESPN_SUMMER_LEAGUE_PATHS:
-        scoreboard_url = (
-            "https://site.api.espn.com/apis/site/v2/sports/basketball/"
-            f"{league_path}/scoreboard?dates={date_str}"
-        )
-        response = requests.get(scoreboard_url, timeout=HTTP_REQUEST_TIMEOUT)
-        if response.status_code != 200:
-            continue
-
-        for event in response.json().get("events", []):
-            link = _match_espn_event(event, away_tricode, home_tricode)
-            if link:
-                return link
+    for event in _iter_espn_summer_league_events(date_str):
+        link = _match_espn_event(event, away_tricode, home_tricode)
+        if link:
+            return link
 
 
 def is_script_enabled(script_name: str) -> bool:

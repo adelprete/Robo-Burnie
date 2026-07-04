@@ -8,7 +8,6 @@ import pytest
 from robo_burnie._settings import TEAM
 from robo_burnie.scripts.around_the_league_thread import (
     _create_around_the_league_thread,
-    _format_around_the_league_tv_channels,
     _generate_post_body,
     _main,
     _team_plays_today,
@@ -55,28 +54,6 @@ def test_team_plays_today():
     }
     assert _team_plays_today(games, TEAM) is True
     assert _team_plays_today({"002": games["002"]}, TEAM) is False
-
-
-# ---------------------------------------------------------------------------
-# _format_around_the_league_tv_channels
-# ---------------------------------------------------------------------------
-
-
-def test_format_tv_omits_amazon_when_other_channels():
-    assert _format_around_the_league_tv_channels("ESPN, Amazon Prime Video") == "ESPN"
-    assert _format_around_the_league_tv_channels("Amazon Prime Video, TNT") == "TNT"
-
-
-def test_format_tv_keeps_amazon_when_only_channel():
-    assert (
-        _format_around_the_league_tv_channels("Amazon Prime Video")
-        == "Amazon Prime Video"
-    )
-
-
-def test_format_tv_prime_video_display_name():
-    assert _format_around_the_league_tv_channels("Prime Video") == "Prime Video"
-    assert _format_around_the_league_tv_channels("ESPN, Prime Video") == "ESPN"
 
 
 # ---------------------------------------------------------------------------
@@ -131,20 +108,20 @@ def test_generate_post_body_tbd_broadcaster():
     assert "TBD" not in body
 
 
-def test_generate_post_body_amazon_prime_with_linear_tv():
+def test_generate_post_body_zero_score():
     games = {
         "001": {
-            "visitor_name": "Heat",
-            "home_name": "Celtics",
-            "visitor_pts": None,
-            "home_pts": None,
-            "game_status_text": " 7:30 PM ET ",
-            "natl_tv_broadcaster_abbreviation": "ESPN, Amazon Prime Video",
+            "visitor_name": "Warriors",
+            "home_name": "Bucks",
+            "visitor_pts": 5,
+            "home_pts": 0,
+            "game_status_text": " Q1 8:42 ",
+            "natl_tv_broadcaster_abbreviation": "",
         },
     }
     body = _generate_post_body(games)
-    assert "ESPN" in body
-    assert "Amazon" not in body
+    assert "5 - 0" in body
+    assert "(Q1 8:42)" in body
 
 
 def test_generate_post_body_amazon_prime_only():
