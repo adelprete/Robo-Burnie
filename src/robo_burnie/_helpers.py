@@ -39,6 +39,7 @@ from nba_api.stats.endpoints import (
 from robo_burnie._settings import TEAM
 
 SUMMER_LEAGUE_IDS = ("13", "15", "16")
+SCOREBOARD_LEAGUE_IDS = ("00", *SUMMER_LEAGUE_IDS)
 ESPN_SUMMER_LEAGUE_PATHS = (
     "nba-summer-california",
     "nba-summer-las-vegas",
@@ -47,6 +48,7 @@ ESPN_SUMMER_LEAGUE_PATHS = (
 SCHEDULE_LEAGUE_V2_CDN_URL = (
     "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
 )
+HTTP_REQUEST_TIMEOUT = 60
 _STREAM_TITLE_TO_CHANNEL = (
     ("nba tv", "NBA TV"),
     ("espnu", "ESPNU"),
@@ -158,7 +160,7 @@ def get_boxscore(game_id: str) -> dict:
 
 
 def _fetch_season_schedule_cdn() -> dict:
-    return requests.get(SCHEDULE_LEAGUE_V2_CDN_URL).json()
+    return requests.get(SCHEDULE_LEAGUE_V2_CDN_URL, timeout=HTTP_REQUEST_TIMEOUT).json()
 
 
 def get_full_team_schedule(team_name: str) -> List[dict]:
@@ -204,11 +206,47 @@ def _channel_from_stream_title(title: str) -> str | None:
     return None
 
 
-def get_game_id_to_channels_map() -> dict:
+def _channels_cdn_url(league_id: str) -> str:
+    return f"https://cdn.nba.com/static/json/liveData/channels/v2/channels_{league_id}.json"
+
+
+def _scoreboard_cdn_url(league_id: str) -> str:
+    return f"https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_{league_id}.json"
+
+
+def _parse_scoreboard_game(game: dict, game_id_to_channels_map: dict) -> dict:
+    return {
+        "game_status_text": game["gameStatusText"],
+        "game_status_id": game["gameStatus"],
+        "live_period": game["period"],
+        "natl_tv_broadcaster_abbreviation": ", ".join(
+            filter_tv_broadcasters(
+                list(game_id_to_channels_map.get(game["gameId"], []))
+            )
+        ),
+        "home_team_id": game["homeTeam"]["teamId"],
+        "visitor_team_id": game["awayTeam"]["teamId"],
+        "home_name": game["homeTeam"]["teamName"],
+        "visitor_name": game["awayTeam"]["teamName"],
+        "home_abbreviation": game["homeTeam"]["teamTricode"],
+        "visitor_abbreviation": game["awayTeam"]["teamTricode"],
+        "home_city_name": game["homeTeam"]["teamCity"],
+        "visitor_city_name": game["awayTeam"]["teamCity"],
+        "home_pts": game["homeTeam"].get("score"),
+        "visitor_pts": game["awayTeam"].get("score"),
+    }
+
+
+def get_game_id_to_channels_map(
+    league_ids: tuple[str, ...] = SCOREBOARD_LEAGUE_IDS,
+) -> dict:
     game_id_to_channels = defaultdict(set)
-    url = "https://cdn.nba.com/static/json/liveData/channels/v2/channels_00.json"
-    response = requests.get(url)
-    if response.status_code == 200:
+    for league_id in league_ids:
+        response = requests.get(
+            _channels_cdn_url(league_id), timeout=HTTP_REQUEST_TIMEOUT
+        )
+        if response.status_code != 200:
+            continue
         data = response.json()
         for game in data.get("channels", {}).get("games", []):
             for stream in game.get("streams", []):
@@ -221,41 +259,122 @@ def get_game_id_to_channels_map() -> dict:
     return game_id_to_channels
 
 
-def get_todays_games_cdn() -> list[dict]:
-    game_id_to_channels_map: dict = get_game_id_to_channels_map()
+def get_todays_games_cdn(
+    league_ids: tuple[str, ...] = SCOREBOARD_LEAGUE_IDS,
+) -> dict:
+    game_id_to_channels_map: dict = get_game_id_to_channels_map(league_ids)
 
-    url = "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json"
-    response = requests.get(url)
-    if response.status_code == 200:
+    games = {}
+    for league_id in league_ids:
+        response = requests.get(
+            _scoreboard_cdn_url(league_id), timeout=HTTP_REQUEST_TIMEOUT
+        )
+        if response.status_code != 200:
+            continue
         data = response.json()
-        games = {}
         for game in data.get("scoreboard", {}).get("games", []):
-            games[game["gameId"]] = {
-                "game_status_text": game["gameStatusText"],
-                "game_status_id": game["gameStatus"],
-                "live_period": game["period"],
-                "natl_tv_broadcaster_abbreviation": ", ".join(
-                    filter_tv_broadcasters(
-                        list(game_id_to_channels_map.get(game["gameId"], []))
-                    )
-                ),
-                "home_team_id": game["homeTeam"]["teamId"],
-                "visitor_team_id": game["awayTeam"]["teamId"],
-                "home_name": game["homeTeam"]["teamName"],
-                "visitor_name": game["awayTeam"]["teamName"],
-                "home_abbreviation": game["homeTeam"]["teamTricode"],
-                "visitor_abbreviation": game["awayTeam"]["teamTricode"],
-                "home_city_name": game["homeTeam"]["teamCity"],
-                "visitor_city_name": game["awayTeam"]["teamCity"],
-                "home_pts": game["homeTeam"].get("score"),
-                "visitor_pts": game["awayTeam"].get("score"),
-            }
+            games[game["gameId"]] = _parse_scoreboard_game(
+                game, game_id_to_channels_map
+            )
+    for game_id, game in _get_todays_summer_league_games_espn().items():
+        games.setdefault(game_id, game)
+    return games
+
+
+def _espn_home_away_competitors(
+    competition: dict,
+) -> tuple[dict, dict] | None:
+    competitors = competition.get("competitors", [])
+    if len(competitors) < 2:
+        return None
+
+    home = None
+    away = None
+    for competitor in competitors:
+        if competitor.get("homeAway") == "home":
+            home = competitor
+        elif competitor.get("homeAway") == "away":
+            away = competitor
+
+    if home is None or away is None:
+        home = competitors[0]
+        away = competitors[1]
+
+    return home, away
+
+
+def _espn_competitor_score(competitor: dict, game_state: str) -> int | None:
+    score = competitor.get("score")
+    if score in (None, ""):
+        return None
+    if game_state == "pre" and score in ("0", 0):
+        return None
+    return int(score)
+
+
+def _espn_national_broadcasters(competition: dict) -> str:
+    names: list[str] = []
+    for broadcast in competition.get("broadcasts", []):
+        if broadcast.get("market") == "national":
+            names.extend(broadcast.get("names", []))
+    return ", ".join(filter_tv_broadcasters(names))
+
+
+def _parse_espn_scoreboard_event(event: dict) -> dict | None:
+    competition = event["competitions"][0]
+    home_away = _espn_home_away_competitors(competition)
+    if home_away is None:
+        return None
+    home, away = home_away
+    status = competition["status"]["type"]
+    state = status.get("state", "pre")
+    game_status_id = {"pre": 1, "in": 2, "post": 3}.get(state, 1)
+
+    return {
+        "game_status_text": status.get("shortDetail", status.get("description", "")),
+        "game_status_id": game_status_id,
+        "live_period": competition["status"].get("period", 0),
+        "natl_tv_broadcaster_abbreviation": _espn_national_broadcasters(competition),
+        "home_team_id": home["team"]["id"],
+        "visitor_team_id": away["team"]["id"],
+        "home_name": home["team"].get("shortDisplayName", home["team"]["displayName"]),
+        "visitor_name": away["team"].get(
+            "shortDisplayName", away["team"]["displayName"]
+        ),
+        "home_abbreviation": home["team"]["abbreviation"],
+        "visitor_abbreviation": away["team"]["abbreviation"],
+        "home_city_name": home["team"].get("location", ""),
+        "visitor_city_name": away["team"].get("location", ""),
+        "home_pts": _espn_competitor_score(home, state),
+        "visitor_pts": _espn_competitor_score(away, state),
+    }
+
+
+def _get_todays_summer_league_games_espn() -> dict:
+    """Summer league scoreboard CDN endpoints are often blocked; ESPN is the fallback."""
+    games: dict = {}
+    date_str = get_todays_date_str(format="%Y%m%d")
+
+    for league_path in ESPN_SUMMER_LEAGUE_PATHS:
+        scoreboard_url = (
+            "https://site.api.espn.com/apis/site/v2/sports/basketball/"
+            f"{league_path}/scoreboard?dates={date_str}"
+        )
+        response = requests.get(scoreboard_url, timeout=HTTP_REQUEST_TIMEOUT)
+        if response.status_code != 200:
+            continue
+
+        for event in response.json().get("events", []):
+            parsed = _parse_espn_scoreboard_event(event)
+            if parsed is not None:
+                games[event["id"]] = parsed
+
     return games
 
 
 def get_todays_games_from_schedule() -> dict:
-    """Get today's games from the full season schedule (ScheduleLeagueV2)."""
-    games_data = scheduleleaguev2.ScheduleLeagueV2().get_dict()["leagueSchedule"]
+    """Get today's games from the season schedule CDN."""
+    games_data = _fetch_season_schedule_cdn()["leagueSchedule"]
     todays_date = get_todays_date_str(format="%m/%d/%Y")
 
     games = {}
@@ -477,7 +596,7 @@ def get_espn_boxscore_link(
     home_tricode = _espn_tricode(home_tricode)
 
     scoreboard_url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date.strftime('%Y%m%d')}"
-    scoreboard = requests.get(scoreboard_url).json()
+    scoreboard = requests.get(scoreboard_url, timeout=HTTP_REQUEST_TIMEOUT).json()
     for event in scoreboard["events"]:
         link = _match_espn_event(event, away_tricode, home_tricode)
         if link:
@@ -496,7 +615,7 @@ def get_espn_summer_league_boxscore_link(
             "https://site.api.espn.com/apis/site/v2/sports/basketball/"
             f"{league_path}/scoreboard?dates={date_str}"
         )
-        response = requests.get(scoreboard_url)
+        response = requests.get(scoreboard_url, timeout=HTTP_REQUEST_TIMEOUT)
         if response.status_code != 200:
             continue
 

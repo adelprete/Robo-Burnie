@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from robo_burnie._helpers import (
+    HTTP_REQUEST_TIMEOUT,
     filter_tv_broadcasters,
     format_game_tv_broadcasters,
     get_boxscore_link,
@@ -13,6 +14,7 @@ from robo_burnie._helpers import (
     get_game_id_to_channels_map,
     get_todays_game_auto,
     get_todays_game_v3,
+    get_todays_games_cdn,
     get_todays_standings,
     is_amazon_prime_channel,
     is_summer_league_game,
@@ -51,6 +53,259 @@ def test_get_game_id_to_channels_map_espnu(mock_requests_get):
     result = get_game_id_to_channels_map()
 
     assert result["0022500001"] == {"ESPNU", "ESPN"}
+
+
+def _scoreboard_response(game_id: str, away: str, home: str) -> dict:
+    return {
+        "scoreboard": {
+            "games": [
+                {
+                    "gameId": game_id,
+                    "gameStatusText": "3:00 PM ET",
+                    "gameStatus": 1,
+                    "period": 0,
+                    "homeTeam": {
+                        "teamId": 1,
+                        "teamName": home,
+                        "teamTricode": home,
+                        "teamCity": home,
+                    },
+                    "awayTeam": {
+                        "teamId": 2,
+                        "teamName": away,
+                        "teamTricode": away,
+                        "teamCity": away,
+                    },
+                }
+            ]
+        }
+    }
+
+
+@patch("robo_burnie._helpers._get_todays_summer_league_games_espn", return_value={})
+@patch("robo_burnie._helpers.requests.get")
+def test_get_todays_games_cdn_includes_summer_league(
+    mock_requests_get, mock_espn_summer_games
+):
+    def fake_get(url, *args, **kwargs):
+        response = MagicMock()
+        response.status_code = 200
+        if "channels_" in url:
+            response.json.return_value = {"channels": {"games": []}}
+        elif "todaysScoreboard_00.json" in url:
+            response.json.return_value = {"scoreboard": {"games": []}}
+        elif "todaysScoreboard_13.json" in url:
+            response.json.return_value = _scoreboard_response(
+                "1322600001", "MIA", "SAS"
+            )
+        else:
+            response.json.return_value = {"scoreboard": {"games": []}}
+        return response
+
+    mock_requests_get.side_effect = fake_get
+
+    result = get_todays_games_cdn(league_ids=("00", "13"))
+
+    assert set(result) == {"1322600001"}
+    assert result["1322600001"]["visitor_abbreviation"] == "MIA"
+
+
+@patch("robo_burnie._helpers.requests.get")
+def test_get_todays_summer_league_games_espn(mock_requests_get):
+    mock_requests_get.return_value.status_code = 200
+    mock_requests_get.return_value.json.return_value = {
+        "events": [
+            {
+                "id": "401881927",
+                "competitions": [
+                    {
+                        "status": {
+                            "period": 0,
+                            "type": {
+                                "state": "pre",
+                                "shortDetail": "7/4 - 3:00 PM EDT",
+                            },
+                        },
+                        "broadcasts": [
+                            {"market": "national", "names": ["ESPN+", "NBA TV"]}
+                        ],
+                        "competitors": [
+                            {
+                                "homeAway": "home",
+                                "score": "0",
+                                "team": {
+                                    "id": "1",
+                                    "abbreviation": "GS",
+                                    "shortDisplayName": "Warriors Blue",
+                                    "displayName": "Golden State Warriors Blue",
+                                    "location": "Golden State",
+                                },
+                            },
+                            {
+                                "homeAway": "away",
+                                "score": "0",
+                                "team": {
+                                    "id": "2",
+                                    "abbreviation": "MIL",
+                                    "shortDisplayName": "Bucks",
+                                    "displayName": "Milwaukee Bucks",
+                                    "location": "Milwaukee",
+                                },
+                            },
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    from robo_burnie._helpers import _get_todays_summer_league_games_espn
+
+    result = _get_todays_summer_league_games_espn()
+
+    assert set(result) == {"401881927"}
+    assert result["401881927"]["visitor_abbreviation"] == "MIL"
+    assert result["401881927"]["natl_tv_broadcaster_abbreviation"] == "ESPN+, NBA TV"
+    assert result["401881927"]["home_pts"] is None
+    assert result["401881927"]["visitor_pts"] is None
+
+
+@patch("robo_burnie._helpers.requests.get")
+def test_get_todays_summer_league_games_espn_live_zero_score(mock_requests_get):
+    mock_requests_get.return_value.status_code = 200
+    mock_requests_get.return_value.json.return_value = {
+        "events": [
+            {
+                "id": "401881928",
+                "competitions": [
+                    {
+                        "status": {
+                            "period": 1,
+                            "type": {
+                                "state": "in",
+                                "shortDetail": "Q1 8:42",
+                            },
+                        },
+                        "broadcasts": [],
+                        "competitors": [
+                            {
+                                "homeAway": "home",
+                                "score": "0",
+                                "team": {
+                                    "id": "1",
+                                    "abbreviation": "GS",
+                                    "shortDisplayName": "Warriors",
+                                    "displayName": "Golden State Warriors",
+                                    "location": "Golden State",
+                                },
+                            },
+                            {
+                                "homeAway": "away",
+                                "score": "5",
+                                "team": {
+                                    "id": "2",
+                                    "abbreviation": "MIL",
+                                    "shortDisplayName": "Bucks",
+                                    "displayName": "Milwaukee Bucks",
+                                    "location": "Milwaukee",
+                                },
+                            },
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    from robo_burnie._helpers import _get_todays_summer_league_games_espn
+
+    result = _get_todays_summer_league_games_espn()
+
+    assert result["401881928"]["home_pts"] == 0
+    assert result["401881928"]["visitor_pts"] == 5
+
+
+@patch("robo_burnie._helpers.requests.get")
+def test_parse_espn_scoreboard_event_missing_homeaway(mock_requests_get):
+    mock_requests_get.return_value.status_code = 200
+    mock_requests_get.return_value.json.return_value = {
+        "events": [
+            {
+                "id": "401881929",
+                "competitions": [
+                    {
+                        "status": {
+                            "period": 0,
+                            "type": {"state": "pre", "shortDetail": "3:00 PM EDT"},
+                        },
+                        "broadcasts": [],
+                        "competitors": [
+                            {
+                                "score": "0",
+                                "team": {
+                                    "id": "1",
+                                    "abbreviation": "MIA",
+                                    "shortDisplayName": "Heat",
+                                    "displayName": "Miami Heat",
+                                    "location": "Miami",
+                                },
+                            },
+                            {
+                                "score": "0",
+                                "team": {
+                                    "id": "2",
+                                    "abbreviation": "BOS",
+                                    "shortDisplayName": "Celtics",
+                                    "displayName": "Boston Celtics",
+                                    "location": "Boston",
+                                },
+                            },
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    from robo_burnie._helpers import _get_todays_summer_league_games_espn
+
+    result = _get_todays_summer_league_games_espn()
+
+    assert set(result) == {"401881929"}
+    assert result["401881929"]["home_abbreviation"] == "MIA"
+    assert result["401881929"]["visitor_abbreviation"] == "BOS"
+
+
+@patch("robo_burnie._helpers._get_todays_summer_league_games_espn")
+@patch("robo_burnie._helpers.requests.get")
+def test_get_todays_games_cdn_prefers_cdn_over_espn(
+    mock_requests_get, mock_espn_summer_games
+):
+    def fake_get(url, *args, **kwargs):
+        response = MagicMock()
+        response.status_code = 200
+        if "channels_" in url:
+            response.json.return_value = {"channels": {"games": []}}
+        elif "todaysScoreboard_13.json" in url:
+            response.json.return_value = _scoreboard_response(
+                "1322600001", "MIA", "SAS"
+            )
+        else:
+            response.json.return_value = {"scoreboard": {"games": []}}
+        return response
+
+    mock_requests_get.side_effect = fake_get
+    mock_espn_summer_games.return_value = {
+        "1322600001": {
+            "visitor_abbreviation": "OVERRIDE",
+            "home_abbreviation": "OVERRIDE",
+        }
+    }
+
+    result = get_todays_games_cdn(league_ids=("00", "13"))
+
+    assert result["1322600001"]["visitor_abbreviation"] == "MIA"
+    assert result["1322600001"]["home_abbreviation"] == "SAS"
 
 
 @pytest.mark.parametrize(
@@ -304,7 +559,8 @@ def test_get_espn_summer_league_boxscore_link():
 
     mock_requests_get.assert_called_once_with(
         "https://site.api.espn.com/apis/site/v2/sports/basketball/"
-        "nba-summer-california/scoreboard?dates=20260703"
+        "nba-summer-california/scoreboard?dates=20260703",
+        timeout=HTTP_REQUEST_TIMEOUT,
     )
     assert result == "https://www.espn.com/nba-summer-league/game/_/gameId/401881933"
 
@@ -328,6 +584,7 @@ def test_get_espn_boxscore_link(
         mock_requests_get.return_value.json.return_value = espn_scoreboard_response
         result = get_espn_boxscore_link(away_tricode, home_tricode, game_time)
         mock_requests_get.assert_called_once_with(
-            f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={game_time.strftime('%Y%m%d')}"
+            f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={game_time.strftime('%Y%m%d')}",
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         assert result == expected_link

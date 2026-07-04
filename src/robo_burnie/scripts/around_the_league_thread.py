@@ -21,6 +21,13 @@ logging.basicConfig(
 TODAYS_DATE_STR = _helpers.get_todays_date_str(hours_offset=3)
 
 
+def _team_plays_today(todays_games: dict, team: str) -> bool:
+    return any(
+        team in (game["home_abbreviation"], game["visitor_abbreviation"])
+        for game in todays_games.values()
+    )
+
+
 def _format_around_the_league_tv_channels(natl_tv: str) -> str:
     """Drop Amazon Prime from the list when traditional TV networks are also listed."""
     parts = [p.strip() for p in natl_tv.split(",") if p.strip()]
@@ -38,16 +45,11 @@ def _main(action: str) -> None:
     )
     subreddit = reddit.subreddit(SUBREDDIT)
 
-    team_game_today = _helpers.get_todays_game_v3(team=TEAM)
-    if team_game_today:
+    todays_games = _helpers.get_todays_games_cdn()
+    if _team_plays_today(todays_games, TEAM):
         logging.info(f"{TEAM} Game Today. Skipping Around the League Thread")
         _unsticky_old_around_the_league_thread(subreddit)
         return
-
-    if action == "create":
-        todays_games = _helpers.get_todays_games_from_schedule()
-    else:
-        todays_games = _helpers.get_todays_games_cdn()
 
     if not todays_games:
         logging.info("No Games Today. Skipping Around the League Thread")
