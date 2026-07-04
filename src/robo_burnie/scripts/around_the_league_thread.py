@@ -28,12 +28,6 @@ def _team_plays_today(todays_games: dict, team: str) -> bool:
     )
 
 
-def _format_around_the_league_tv_channels(natl_tv: str) -> str:
-    """Drop Amazon Prime from the list when traditional TV networks are also listed."""
-    parts = [p.strip() for p in natl_tv.split(",") if p.strip()]
-    return ", ".join(_helpers.filter_tv_broadcasters(parts))
-
-
 def _main(action: str) -> None:
     """Creates or updates the Around the League thread on the subreddit"""
     reddit = praw.Reddit(
@@ -72,7 +66,7 @@ def _generate_post_body(todays_games: dict) -> str:
     for game_id, game in todays_games.items():
         score = (
             f"{game['visitor_pts']} - {game['home_pts']}"
-            if game.get("home_pts") and game.get("visitor_pts")
+            if game.get("home_pts") is not None and game.get("visitor_pts") is not None
             else None
         )
         status = (
@@ -81,9 +75,7 @@ def _generate_post_body(todays_games: dict) -> str:
             else game["game_status_text"].strip()
         )
         raw_tv = game["natl_tv_broadcaster_abbreviation"]
-        natl_tv_broadcaster = ""
-        if raw_tv and raw_tv != "TBD":
-            natl_tv_broadcaster = _format_around_the_league_tv_channels(raw_tv)
+        natl_tv_broadcaster = "" if not raw_tv or raw_tv == "TBD" else raw_tv
         # Timberwolves name is too long and wraps on mobile
         visitor_name = (
             game["visitor_name"]

@@ -108,6 +108,7 @@ def test_get_todays_games_cdn_includes_summer_league(
 
     assert set(result) == {"1322600001"}
     assert result["1322600001"]["visitor_abbreviation"] == "MIA"
+    mock_espn_summer_games.assert_not_called()
 
 
 @patch("robo_burnie._helpers.requests.get")
@@ -306,6 +307,38 @@ def test_get_todays_games_cdn_prefers_cdn_over_espn(
 
     assert result["1322600001"]["visitor_abbreviation"] == "MIA"
     assert result["1322600001"]["home_abbreviation"] == "SAS"
+    mock_espn_summer_games.assert_not_called()
+
+
+@patch("robo_burnie._helpers._get_todays_summer_league_games_espn")
+@patch("robo_burnie._helpers.requests.get")
+def test_get_todays_games_cdn_uses_espn_when_summer_league_cdn_fails(
+    mock_requests_get, mock_espn_summer_games
+):
+    def fake_get(url, *args, **kwargs):
+        response = MagicMock()
+        if "todaysScoreboard_13.json" in url:
+            response.status_code = 404
+        else:
+            response.status_code = 200
+            if "channels_" in url:
+                response.json.return_value = {"channels": {"games": []}}
+            else:
+                response.json.return_value = {"scoreboard": {"games": []}}
+        return response
+
+    mock_requests_get.side_effect = fake_get
+    mock_espn_summer_games.return_value = {
+        "401881927": {
+            "visitor_abbreviation": "MIA",
+            "home_abbreviation": "SAS",
+        }
+    }
+
+    result = get_todays_games_cdn(league_ids=("00", "13"))
+
+    mock_espn_summer_games.assert_called_once_with(("nba-summer-california",))
+    assert result["401881927"]["visitor_abbreviation"] == "MIA"
 
 
 @pytest.mark.parametrize(
