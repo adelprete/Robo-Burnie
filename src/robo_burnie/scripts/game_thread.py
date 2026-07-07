@@ -57,17 +57,17 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
     tv_channels = _get_tv_broadcasters(game_data, team)
     radio_channels = _get_radio_broadcasters(game_data, team)
 
-    home_team = TEAM_ID_TO_INFO[str(todays_game["home_team_id"])]
-    away_team = TEAM_ID_TO_INFO[str(todays_game["away_team_id"])]
+    home_team = _resolve_team_info(todays_game, "home")
+    away_team = _resolve_team_info(todays_game, "away")
 
     # Grab general game information
     visitor_team_name = away_team["fullName"]
-    visitor_reddit = TEAM_TRI_TO_INFO[away_team["tricode"]]["reddit"]
+    visitor_reddit = _team_reddit(away_team)
     visitor_win = todays_game["away_team_wins"]
     visitor_loss = todays_game["away_team_losses"]
 
     home_team_name = home_team["fullName"]
-    home_reddit = TEAM_TRI_TO_INFO[home_team["tricode"]]["reddit"]
+    home_reddit = _team_reddit(home_team)
     home_win = todays_game["home_team_wins"]
     home_loss = todays_game["home_team_losses"]
 
@@ -140,6 +140,33 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
 
 def _is_summer_league_game(todays_game: dict) -> bool:
     return todays_game.get("game_label") == "Summer League"
+
+
+def _resolve_team_info(todays_game: dict, side: str) -> dict:
+    """Resolve team metadata; exhibition games may use non-standard team IDs."""
+    prefix = "home" if side == "home" else "away"
+    team_id = str(todays_game[f"{prefix}_team_id"])
+
+    if team_id in TEAM_ID_TO_INFO:
+        return TEAM_ID_TO_INFO[team_id]
+
+    tricode = todays_game.get(f"{prefix}_tricode")
+    if tricode:
+        for info in TEAM_ID_TO_INFO.values():
+            if info["tricode"] == tricode:
+                return info
+        tri_info = TEAM_TRI_TO_INFO.get(tricode)
+        if tri_info:
+            return {"fullName": tri_info["full_name"], "tricode": tricode}
+
+    raise KeyError(team_id)
+
+
+def _team_reddit(team_info: dict) -> str:
+    tricode = team_info["tricode"]
+    if "reddit" in team_info:
+        return team_info["reddit"]
+    return TEAM_TRI_TO_INFO.get(tricode, {}).get("reddit", "")
 
 
 def _build_standings_table(
