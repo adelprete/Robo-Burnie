@@ -355,6 +355,34 @@ def test_generate_post_details_summer_league_skips_standings(
     mock_standings_table.assert_not_called()
 
 
+@patch(
+    "robo_burnie.scripts.game_thread._helpers.get_boxscore_link",
+    return_value="https://espn.com/summer-league/boxscore",
+)
+def test_generate_post_details_summer_league_alternate_team_ids(
+    mock_boxscore_link, todays_game
+):
+    """Summer league schedule API returns 1710612xxx IDs, not regular 1610612xxx."""
+    todays_game["game_label"] = "Summer League"
+    todays_game["game_id"] = "1322600002"
+    todays_game["home_team_id"] = 1710612744  # GSW summer league ID
+    todays_game["home_tricode"] = "GSW"
+    todays_game["home_team_wins"] = 1
+    todays_game["home_team_losses"] = 0
+    todays_game["away_team_id"] = 1710612748  # MIA summer league ID
+    todays_game["away_tricode"] = "MIA"
+    todays_game["away_team_wins"] = 0
+    todays_game["away_team_losses"] = 1
+    todays_game["broadcasters"] = {}
+
+    title, body = _generate_post_details(todays_game, "MIA")
+
+    assert "Golden State Warriors" in title
+    assert "Miami Heat" in title
+    assert "/r/warriors" in body
+    assert "/r/heat" in body
+
+
 # ---------------------------------------------------------------------------
 # _submit_post
 # ---------------------------------------------------------------------------
