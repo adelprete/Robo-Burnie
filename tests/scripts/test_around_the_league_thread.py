@@ -124,6 +124,22 @@ def test_generate_post_body_zero_score():
     assert "(Q1 8:42)" in body
 
 
+def test_generate_post_body_strips_espn_date_prefix():
+    games = {
+        "001": {
+            "visitor_name": "Bucks",
+            "home_name": "Warriors Blue",
+            "visitor_pts": None,
+            "home_pts": None,
+            "game_status_text": "7/4 - 3:00 PM EDT",
+            "natl_tv_broadcaster_abbreviation": "ESPN+",
+        },
+    }
+    body = _generate_post_body(games)
+    assert "7/4" not in body
+    assert "3:00 PM EDT" in body
+
+
 def test_generate_post_body_amazon_prime_only():
     games = {
         "001": {

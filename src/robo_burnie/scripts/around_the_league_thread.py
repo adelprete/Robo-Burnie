@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import sys
 from datetime import datetime
 
@@ -19,6 +20,13 @@ logging.basicConfig(
 
 # Today's date is eastern time minus 4 hours just to ensure we stay within the same "day" after midnight on the east coast
 TODAYS_DATE_STR = _helpers.get_todays_date_str(hours_offset=3)
+
+# ESPN shortDetail prefixes scheduled games with the date (e.g. "7/4 - 3:00 PM EDT").
+_ESPN_DATE_PREFIX_RE = re.compile(r"^\d{1,2}/\d{1,2}\s*-\s*")
+
+
+def _format_game_status(status_text: str) -> str:
+    return _ESPN_DATE_PREFIX_RE.sub("", status_text.strip()).strip()
 
 
 def _team_plays_today(todays_games: dict, team: str) -> bool:
@@ -69,11 +77,8 @@ def _generate_post_body(todays_games: dict) -> str:
             if game.get("home_pts") is not None and game.get("visitor_pts") is not None
             else None
         )
-        status = (
-            f"({game['game_status_text'].strip()})"
-            if score
-            else game["game_status_text"].strip()
-        )
+        status_text = _format_game_status(game["game_status_text"])
+        status = f"({status_text})" if score else status_text
         raw_tv = game["natl_tv_broadcaster_abbreviation"]
         natl_tv_broadcaster = "" if not raw_tv or raw_tv == "TBD" else raw_tv
         # Timberwolves name is too long and wraps on mobile
