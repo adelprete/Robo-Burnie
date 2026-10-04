@@ -14,6 +14,7 @@ from robo_burnie._helpers import (
     get_espn_boxscore_link,
     get_espn_summer_league_boxscore_link,
     get_full_team_schedule,
+    get_todays_date_str,
     get_todays_game_auto,
     get_todays_game_v3,
     get_todays_games,
@@ -653,3 +654,25 @@ def test_find_team_game():
     }
     assert find_team_game(games, "MIA") is games["002"]
     assert find_team_game({"001": games["001"]}, "MIA") is None
+
+
+@pytest.mark.parametrize(
+    "utc_now, hours_offset, expected",
+    [
+        # 8:30 PM EST (UTC-5): still Jan 14 in Miami even though UTC rolled over
+        (datetime(2026, 1, 15, 1, 30, tzinfo=timezone.utc), 0, "20260114"),
+        # 11:30 PM EDT (UTC-4)
+        (datetime(2026, 7, 15, 3, 30, tzinfo=timezone.utc), 0, "20260714"),
+        # 1 AM EST with the 3h late-game offset stays on the previous day's slate
+        (datetime(2026, 1, 15, 6, 0, tzinfo=timezone.utc), 3, "20260114"),
+        (datetime(2026, 1, 15, 6, 0, tzinfo=timezone.utc), 0, "20260115"),
+    ],
+)
+def test_get_todays_date_str_uses_eastern_time(utc_now, hours_offset, expected):
+    class FrozenDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return utc_now.astimezone(tz)
+
+    with patch("robo_burnie._helpers.datetime", FrozenDatetime):
+        assert get_todays_date_str(hours_offset=hours_offset) == expected

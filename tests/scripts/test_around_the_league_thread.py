@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from robo_burnie._helpers import ET
 from robo_burnie._settings import TEAM
 from robo_burnie.scripts.around_the_league_thread import (
     _create_around_the_league_thread,
@@ -148,7 +149,7 @@ def test_generate_post_body_amazon_prime_only():
 @patch("robo_burnie.scripts.around_the_league_thread.TODAYS_DATE_STR", "20250120")
 def test_unsticky_old_thread():
     old_post = MagicMock(stickied=True, title="[Around the League] Discuss")
-    old_post.created_utc = datetime(2025, 1, 19, 12, 0, 0).timestamp()
+    old_post.created_utc = datetime(2025, 1, 19, 12, 0, 0, tzinfo=ET).timestamp()
     subreddit = MagicMock()
     subreddit.hot.return_value = [old_post]
 
@@ -159,7 +160,7 @@ def test_unsticky_old_thread():
 @patch("robo_burnie.scripts.around_the_league_thread.TODAYS_DATE_STR", "20250120")
 def test_unsticky_keeps_todays_thread():
     today_post = MagicMock(stickied=True, title="[Around the League] Discuss")
-    today_post.created_utc = datetime(2025, 1, 20, 12, 0, 0).timestamp()
+    today_post.created_utc = datetime(2025, 1, 20, 12, 0, 0, tzinfo=ET).timestamp()
     subreddit = MagicMock()
     subreddit.hot.return_value = [today_post]
 

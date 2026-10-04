@@ -3,11 +3,10 @@ from __future__ import annotations
 import logging
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import praw
-import pytz
 from dateutil.parser import parse
 from google.oauth2 import service_account
 from googleapiclient.discovery import Resource, build
@@ -31,7 +30,7 @@ SERVICE_ACCOUNT_FILE = "roboburnie-calendar-c77b356148bd.json"
 
 def _main() -> None:
     """Updates the Google Calendar with the Heat's schedule and resyncs the schedule widget on Reddit"""
-    current_time = datetime.now(tz=pytz.utc).isoformat()
+    current_time = datetime.now(tz=timezone.utc).isoformat()
     service = _get_google_calendar_service()
     events_map = _build_events_map(service, current_time)
     _update_google_calendar(service, current_time, events_map)
@@ -111,9 +110,7 @@ def _generate_event_summary(game: dict) -> str:
 def _generate_event_start_end_times(game: dict) -> tuple[str, str]:
     """Generate the start and end times for the event"""
     utc_datetime = parse(game["gameDateTimeUTC"])
-    eastern_datetime = utc_datetime.replace(tzinfo=pytz.utc).astimezone(
-        pytz.timezone("US/Eastern")
-    )
+    eastern_datetime = utc_datetime.replace(tzinfo=timezone.utc).astimezone(_helpers.ET)
     eastern_start_str = eastern_datetime.isoformat()
     eastern_end_str = (
         eastern_datetime + timedelta(hours=2) + timedelta(minutes=30)

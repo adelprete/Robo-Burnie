@@ -5,7 +5,6 @@ import logging
 import re
 import sys
 import time
-from datetime import datetime, timezone
 from typing import Tuple
 
 import praw
@@ -127,7 +126,7 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
     home_loss = todays_game["home_team_losses"]
 
     # Get Date information
-    today_datetime = datetime.now(timezone.utc)
+    today_datetime = _helpers.get_current_datetime()
     month = today_datetime.strftime("%m")
     day = today_datetime.strftime("%d")
     start_time = todays_game["status_text"]

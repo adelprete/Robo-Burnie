@@ -17,7 +17,7 @@ logging.basicConfig(
     datefmt="%d-%b-%y %H:%M:%S",
 )
 
-# Today's date is eastern time minus 4 hours just to ensure we stay within the same "day" after midnight on the east coast
+# Today's date is eastern time minus 3 hours just to ensure we stay within the same "day" after midnight on the east coast
 TODAYS_DATE_STR = _helpers.get_todays_date_str(hours_offset=3)
 
 
@@ -85,7 +85,9 @@ def _unsticky_old_around_the_league_thread(subreddit: praw.models.Subreddit) -> 
     """Unstickies the any Around the League thread that was not made today"""
     for post in subreddit.hot(limit=10):
         if post.stickied and "[Around the League]" in post.title:
-            post_date = datetime.fromtimestamp(post.created_utc).strftime("%Y%m%d")
+            post_date = datetime.fromtimestamp(post.created_utc, _helpers.ET).strftime(
+                "%Y%m%d"
+            )
             if post_date != TODAYS_DATE_STR:
                 post.mod.sticky(False)
 

@@ -72,7 +72,7 @@ Central module for all NBA data. Key functions:
 - **Schedule:** `get_full_team_schedule()` — via NBA CDN.
 - **Today's games:** `get_todays_game_v3()`, `get_todays_games()` — checks if the Heat play today and fetches all games (with live scores and TV) via `nba_api`, falling back to ESPN for Summer League.
 - **Box scores:** `get_boxscore()`, `get_boxscore_link()`, `get_espn_boxscore_link()`.
-- **Utilities:** `get_current_datetime()` (uses UTC-4 offset for Eastern time), `is_script_enabled()`.
+- **Utilities:** `get_current_datetime()` (US Eastern via `zoneinfo`, DST-aware), `is_script_enabled()`.
 
 ### _constants.py
 
@@ -133,7 +133,7 @@ In production, cron jobs handle scheduling. See `crontab.example` for the full s
 
 ## Conventions
 
-- All times are handled in approximate Eastern time via a UTC-4 offset (`datetime.now() - timedelta(hours=4)`).
+- "Now" and "today" come from `_helpers.get_current_datetime()` (US Eastern, `_helpers.ET`), independent of the host timezone. `get_todays_date_str(hours_offset=3)` keeps post-midnight runs on the previous day's slate. `post_game_thread`'s duplicate check intentionally uses UTC dates.
 - Thread management uses Reddit sticky slots (max 2). Creating a new thread unstickies the previous one of the same type.
 - Flair IDs are hardcoded per thread type for consistent subreddit styling.
 - Scripts that need to guard against concurrent execution use `file_lock`.

@@ -27,6 +27,7 @@ __all__ = [
 ]
 from datetime import datetime, timedelta
 from typing import List
+from zoneinfo import ZoneInfo
 
 import requests
 from nba_api.live.nba.endpoints import boxscore
@@ -39,6 +40,8 @@ from nba_api.stats.endpoints import (
 )
 
 from robo_burnie._settings import TEAM
+
+ET = ZoneInfo("America/New_York")
 
 SUMMER_LEAGUE_IDS = ("13", "15", "16")
 SCOREBOARD_LEAGUE_IDS = ("00", *SUMMER_LEAGUE_IDS)
@@ -166,12 +169,13 @@ def get_full_team_schedule(team_name: str) -> List[dict]:
 
 
 def get_current_datetime() -> datetime:
-    """Returns"""
-    return datetime.now() - timedelta(hours=4)
+    """Current time in US Eastern (DST-aware), regardless of the host's timezone."""
+    return datetime.now(ET)
 
 
 def get_todays_date_str(hours_offset=0, format: str = "%Y%m%d") -> str:
-    return (datetime.now() - timedelta(hours=hours_offset)).strftime(format)
+    """Eastern date; hours_offset keeps post-midnight runs on the previous day's slate."""
+    return (get_current_datetime() - timedelta(hours=hours_offset)).strftime(format)
 
 
 def find_team_game(todays_games: dict, team: str = TEAM) -> dict | None:

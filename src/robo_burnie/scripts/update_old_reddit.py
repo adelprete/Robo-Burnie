@@ -121,7 +121,7 @@ def _update_schedule(sidebar_text: str, team_name: str) -> str:
         "##[Standings]" + sidebar_text.split("##[Standings]", 1)[1]
     )
 
-    today = datetime.today()
+    today = _helpers.get_current_datetime().replace(tzinfo=None)
     seasons_games = _helpers.get_full_team_schedule(team_name)
 
     # Find where we are in the schedule

@@ -206,11 +206,9 @@ def test_update_schedule(mock_schedule, sidebar_wiki, sample_schedule_games):
 
     sidebar_text = sidebar_wiki.content_md
     with patch(
-        "robo_burnie.scripts.update_old_reddit.datetime",
-        wraps=datetime,
-    ) as mock_dt:
-        mock_dt.today.return_value = datetime(2025, 1, 16)
-        mock_dt.strptime = datetime.strptime
+        "robo_burnie.scripts.update_old_reddit._helpers.get_current_datetime",
+        return_value=datetime(2025, 1, 16),
+    ):
         result = _update_schedule(sidebar_text, "heat")
 
     assert "##[Schedule]" in result
