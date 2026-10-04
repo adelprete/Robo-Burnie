@@ -149,12 +149,10 @@ def get_boxscore(game_id: str) -> dict:
     return box_score
 
 
-def _fetch_season_schedule_cdn() -> dict:
-    return requests.get(SCHEDULE_LEAGUE_V2_CDN_URL, timeout=HTTP_REQUEST_TIMEOUT).json()
-
-
 def get_full_team_schedule(team_name: str) -> List[dict]:
-    schedule = _fetch_season_schedule_cdn()
+    schedule = requests.get(
+        SCHEDULE_LEAGUE_V2_CDN_URL, timeout=HTTP_REQUEST_TIMEOUT
+    ).json()
 
     teams_games = []
     for game_date in schedule["leagueSchedule"]["gameDates"]:

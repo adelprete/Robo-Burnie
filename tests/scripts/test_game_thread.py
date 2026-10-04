@@ -23,7 +23,7 @@ BOSTON_TEAM_ID = "1610612738"
 
 
 @pytest.fixture()
-def todays_game(cdn_game_data):
+def todays_game():
     return {
         "game_id": "0022400100",
         "game_label": "",
@@ -37,15 +37,6 @@ def todays_game(cdn_game_data):
         "away_team_losses": 5,
         "home_tricode": "MIA",
         "away_tricode": "BOS",
-        "broadcasters": cdn_game_data["broadcasters"],
-    }
-
-
-@pytest.fixture()
-def cdn_game_data():
-    return {
-        "homeTeam": {"teamTricode": "MIA"},
-        "awayTeam": {"teamTricode": "BOS"},
         "broadcasters": {
             "nationalTvBroadcasters": [
                 {"broadcasterAbbreviation": "ESPN"},
@@ -109,23 +100,23 @@ def test_ordinal(n, expected):
 # ---------------------------------------------------------------------------
 
 
-def test_get_tv_broadcasters_home_team(cdn_game_data):
-    result = _get_tv_broadcasters(cdn_game_data, "MIA")
+def test_get_tv_broadcasters_home_team(todays_game):
+    result = _get_tv_broadcasters(todays_game, "MIA")
     assert result == ["BSSUN", "ESPN"]
 
 
-def test_get_tv_broadcasters_away_team(cdn_game_data):
-    result = _get_tv_broadcasters(cdn_game_data, "BOS")
+def test_get_tv_broadcasters_away_team(todays_game):
+    result = _get_tv_broadcasters(todays_game, "BOS")
     assert result == ["NBCSB", "ESPN"]
 
 
-def test_get_radio_broadcasters_home_team(cdn_game_data):
-    result = _get_radio_broadcasters(cdn_game_data, "MIA")
+def test_get_radio_broadcasters_home_team(todays_game):
+    result = _get_radio_broadcasters(todays_game, "MIA")
     assert result == ["WAXY"]
 
 
-def test_get_radio_broadcasters_away_team(cdn_game_data):
-    result = _get_radio_broadcasters(cdn_game_data, "BOS")
+def test_get_radio_broadcasters_away_team(todays_game):
+    result = _get_radio_broadcasters(todays_game, "BOS")
     assert result == ["WBZ"]
 
 
@@ -136,8 +127,7 @@ def test_get_tv_broadcasters_missing_cdn_data():
 
 def test_get_tv_broadcasters_summer_league_schedule_format():
     game_data = {
-        "homeTeam": {"teamTricode": "SAS"},
-        "awayTeam": {"teamTricode": "MIA"},
+        "home_tricode": "SAS",
         "broadcasters": {
             "nationalBroadcasters": [
                 {
@@ -169,8 +159,7 @@ def test_get_tv_broadcasters_summer_league_schedule_format():
 
 def test_get_tv_broadcasters_keeps_amazon_when_only_channel():
     game_data = {
-        "homeTeam": {"teamTricode": "SAS"},
-        "awayTeam": {"teamTricode": "MIA"},
+        "home_tricode": "SAS",
         "broadcasters": {
             "nationalBroadcasters": [
                 {
@@ -190,8 +179,7 @@ def test_get_tv_broadcasters_keeps_amazon_when_only_channel():
 
 def test_get_tv_broadcasters_hides_amazon_when_regional_tv_exists():
     game_data = {
-        "homeTeam": {"teamTricode": "MIA"},
-        "awayTeam": {"teamTricode": "BOS"},
+        "home_tricode": "MIA",
         "broadcasters": {
             "nationalBroadcasters": [
                 {

@@ -44,14 +44,8 @@ def _main(action: str) -> None:
 
 
 def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
-    game_data = {
-        "broadcasters": todays_game.get("broadcasters", {}),
-        "homeTeam": {"teamTricode": todays_game.get("home_tricode", "")},
-        "awayTeam": {"teamTricode": todays_game.get("away_tricode", "")},
-    }
-
-    tv_channels = _get_tv_broadcasters(game_data, team)
-    radio_channels = _get_radio_broadcasters(game_data, team)
+    tv_channels = _get_tv_broadcasters(todays_game, team)
+    radio_channels = _get_radio_broadcasters(todays_game, team)
 
     home_team = _resolve_team_info(todays_game, "home")
     away_team = _resolve_team_info(todays_game, "away")
@@ -235,8 +229,8 @@ def _submit_post(subreddit: str, title: str, self_text: str) -> None:
         logging.info("Game thread already posted")
 
 
-def _get_tv_broadcasters(game_data: dict, team: str):
-    broadcasters = game_data.get("broadcasters")
+def _get_tv_broadcasters(todays_game: dict, team: str):
+    broadcasters = todays_game.get("broadcasters")
     if not broadcasters:
         return []
 
@@ -255,7 +249,7 @@ def _get_tv_broadcasters(game_data: dict, team: str):
 
     team_key = (
         "homeTvBroadcasters"
-        if game_data["homeTeam"]["teamTricode"] == team
+        if todays_game.get("home_tricode") == team
         else "awayTvBroadcasters"
     )
     team_tv_broadcasters = []
@@ -267,8 +261,8 @@ def _get_tv_broadcasters(game_data: dict, team: str):
     )
 
 
-def _get_radio_broadcasters(game_data: dict, team: str):
-    broadcasters = game_data.get("broadcasters")
+def _get_radio_broadcasters(todays_game: dict, team: str):
+    broadcasters = todays_game.get("broadcasters")
     if not broadcasters:
         return []
 
@@ -278,7 +272,7 @@ def _get_radio_broadcasters(game_data: dict, team: str):
 
     team_key = (
         "homeRadioBroadcasters"
-        if game_data["homeTeam"]["teamTricode"] == team
+        if todays_game.get("home_tricode") == team
         else "awayRadioBroadcasters"
     )
     team_radio_broadcasters = []
