@@ -11,10 +11,9 @@ from robo_burnie._helpers import (
     get_boxscore_link,
     get_espn_boxscore_link,
     get_espn_summer_league_boxscore_link,
-    get_game_id_to_channels_map,
     get_todays_game_auto,
     get_todays_game_v3,
-    get_todays_games_cdn,
+    get_todays_games,
     get_todays_standings,
     is_amazon_prime_channel,
     is_summer_league_game,
@@ -33,28 +32,6 @@ def espn_scoreboard_response():
         return json.load(f)
 
 
-@patch("robo_burnie._helpers.requests.get")
-def test_get_game_id_to_channels_map_espnu(mock_requests_get):
-    mock_requests_get.return_value.status_code = 200
-    mock_requests_get.return_value.json.return_value = {
-        "channels": {
-            "games": [
-                {
-                    "gameId": "0022500001",
-                    "streams": [
-                        {"title": "Watch on ESPNU"},
-                        {"title": "Watch on ESPN"},
-                    ],
-                }
-            ]
-        }
-    }
-
-    result = get_game_id_to_channels_map()
-
-    assert result["0022500001"] == {"ESPNU", "ESPN"}
-
-
 def _scoreboard_response(game_id: str, away: str, home: str) -> dict:
     return {
         "scoreboard": {
@@ -69,12 +46,18 @@ def _scoreboard_response(game_id: str, away: str, home: str) -> dict:
                         "teamName": home,
                         "teamTricode": home,
                         "teamCity": home,
+                        "score": 0,
                     },
                     "awayTeam": {
                         "teamId": 2,
                         "teamName": away,
                         "teamTricode": away,
                         "teamCity": away,
+                        "score": 0,
+                    },
+                    # ScoreboardV3 shape: "broadcastDisplay", no broadcasterMedia
+                    "broadcasters": {
+                        "nationalBroadcasters": [{"broadcastDisplay": "NBA TV"}],
                     },
                 }
             ]
@@ -82,33 +65,45 @@ def _scoreboard_response(game_id: str, away: str, home: str) -> dict:
     }
 
 
+def _fake_scoreboardv3(responses: dict):
+    """Build a ScoreboardV3 stand-in returning responses[league_id]; an Exception value is raised."""
+
+    def fake(game_date, league_id):
+        response = responses.get(league_id, {"scoreboard": {"games": []}})
+        if isinstance(response, Exception):
+            raise response
+        endpoint = MagicMock()
+        endpoint.get_dict.return_value = response
+        return endpoint
+
+    return fake
+
+
 @patch("robo_burnie._helpers._get_todays_summer_league_games_espn", return_value={})
-@patch("robo_burnie._helpers.requests.get")
-def test_get_todays_games_cdn_includes_summer_league(
-    mock_requests_get, mock_espn_summer_games
+@patch("robo_burnie._helpers.scoreboardv3.ScoreboardV3")
+def test_get_todays_games_includes_summer_league(
+    mock_scoreboard, mock_espn_summer_games
 ):
-    def fake_get(url, *args, **kwargs):
-        response = MagicMock()
-        response.status_code = 200
-        if "channels_" in url:
-            response.json.return_value = {"channels": {"games": []}}
-        elif "todaysScoreboard_00.json" in url:
-            response.json.return_value = {"scoreboard": {"games": []}}
-        elif "todaysScoreboard_13.json" in url:
-            response.json.return_value = _scoreboard_response(
-                "1322600001", "MIA", "SAS"
-            )
-        else:
-            response.json.return_value = {"scoreboard": {"games": []}}
-        return response
+    mock_scoreboard.side_effect = _fake_scoreboardv3(
+        {"13": _scoreboard_response("1322600001", "MIA", "SAS")}
+    )
 
-    mock_requests_get.side_effect = fake_get
-
-    result = get_todays_games_cdn(league_ids=("00", "13"))
+    result = get_todays_games(league_ids=("00", "13"))
 
     assert set(result) == {"1322600001"}
-    assert result["1322600001"]["visitor_abbreviation"] == "MIA"
+    game = result["1322600001"]
+    assert game["visitor_abbreviation"] == "MIA"
+    assert game["natl_tv_broadcaster_abbreviation"] == "NBA TV"
+    assert game["home_pts"] is None and game["visitor_pts"] is None
     mock_espn_summer_games.assert_not_called()
+
+
+@patch("robo_burnie._helpers.scoreboardv3.ScoreboardV3")
+def test_get_todays_games_raises_when_nba_scoreboard_fails(mock_scoreboard):
+    mock_scoreboard.side_effect = _fake_scoreboardv3({"00": ValueError("blocked")})
+
+    with pytest.raises(ValueError):
+        get_todays_games(league_ids=("00",))
 
 
 @patch("robo_burnie._helpers.requests.get")
@@ -278,24 +273,13 @@ def test_parse_espn_scoreboard_event_missing_homeaway(mock_requests_get):
 
 
 @patch("robo_burnie._helpers._get_todays_summer_league_games_espn")
-@patch("robo_burnie._helpers.requests.get")
-def test_get_todays_games_cdn_prefers_cdn_over_espn(
-    mock_requests_get, mock_espn_summer_games
+@patch("robo_burnie._helpers.scoreboardv3.ScoreboardV3")
+def test_get_todays_games_prefers_nba_over_espn(
+    mock_scoreboard, mock_espn_summer_games
 ):
-    def fake_get(url, *args, **kwargs):
-        response = MagicMock()
-        response.status_code = 200
-        if "channels_" in url:
-            response.json.return_value = {"channels": {"games": []}}
-        elif "todaysScoreboard_13.json" in url:
-            response.json.return_value = _scoreboard_response(
-                "1322600001", "MIA", "SAS"
-            )
-        else:
-            response.json.return_value = {"scoreboard": {"games": []}}
-        return response
-
-    mock_requests_get.side_effect = fake_get
+    mock_scoreboard.side_effect = _fake_scoreboardv3(
+        {"13": _scoreboard_response("1322600001", "MIA", "SAS")}
+    )
     mock_espn_summer_games.return_value = {
         "1322600001": {
             "visitor_abbreviation": "OVERRIDE",
@@ -303,7 +287,7 @@ def test_get_todays_games_cdn_prefers_cdn_over_espn(
         }
     }
 
-    result = get_todays_games_cdn(league_ids=("00", "13"))
+    result = get_todays_games(league_ids=("00", "13"))
 
     assert result["1322600001"]["visitor_abbreviation"] == "MIA"
     assert result["1322600001"]["home_abbreviation"] == "SAS"
@@ -311,23 +295,11 @@ def test_get_todays_games_cdn_prefers_cdn_over_espn(
 
 
 @patch("robo_burnie._helpers._get_todays_summer_league_games_espn")
-@patch("robo_burnie._helpers.requests.get")
-def test_get_todays_games_cdn_uses_espn_when_summer_league_cdn_fails(
-    mock_requests_get, mock_espn_summer_games
+@patch("robo_burnie._helpers.scoreboardv3.ScoreboardV3")
+def test_get_todays_games_uses_espn_when_summer_league_fails(
+    mock_scoreboard, mock_espn_summer_games
 ):
-    def fake_get(url, *args, **kwargs):
-        response = MagicMock()
-        if "todaysScoreboard_13.json" in url:
-            response.status_code = 404
-        else:
-            response.status_code = 200
-            if "channels_" in url:
-                response.json.return_value = {"channels": {"games": []}}
-            else:
-                response.json.return_value = {"scoreboard": {"games": []}}
-        return response
-
-    mock_requests_get.side_effect = fake_get
+    mock_scoreboard.side_effect = _fake_scoreboardv3({"13": ValueError("blocked")})
     mock_espn_summer_games.return_value = {
         "401881927": {
             "visitor_abbreviation": "MIA",
@@ -335,7 +307,7 @@ def test_get_todays_games_cdn_uses_espn_when_summer_league_cdn_fails(
         }
     }
 
-    result = get_todays_games_cdn(league_ids=("00", "13"))
+    result = get_todays_games(league_ids=("00", "13"))
 
     mock_espn_summer_games.assert_called_once_with(("nba-summer-california",))
     assert result["401881927"]["visitor_abbreviation"] == "MIA"

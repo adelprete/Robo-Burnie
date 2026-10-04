@@ -227,7 +227,7 @@ def test_update_thread():
 
 
 @patch("robo_burnie.scripts.around_the_league_thread.praw.Reddit")
-@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games_cdn")
+@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games")
 def test_main_team_plays_today(mock_get_games_cdn, mock_reddit_cls):
     mock_get_games_cdn.return_value = {
         "001": {"home_abbreviation": TEAM, "visitor_abbreviation": "BOS"},
@@ -244,7 +244,7 @@ def test_main_team_plays_today(mock_get_games_cdn, mock_reddit_cls):
 
 
 @patch("robo_burnie.scripts.around_the_league_thread.praw.Reddit")
-@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games_cdn")
+@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games")
 def test_main_no_games_today(mock_get_games_cdn, mock_reddit_cls):
     mock_get_games_cdn.return_value = {}
     mock_reddit = MagicMock()
@@ -260,7 +260,7 @@ def test_main_no_games_today(mock_get_games_cdn, mock_reddit_cls):
 
 @patch("robo_burnie.scripts.around_the_league_thread._create_around_the_league_thread")
 @patch("robo_burnie.scripts.around_the_league_thread._generate_post_body")
-@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games_cdn")
+@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games")
 @patch("robo_burnie.scripts.around_the_league_thread.praw.Reddit")
 def test_main_create_action(
     mock_reddit_cls, mock_get_games_cdn, mock_gen_body, mock_create
@@ -279,7 +279,7 @@ def test_main_create_action(
 
 @patch("robo_burnie.scripts.around_the_league_thread._update_around_the_league_thread")
 @patch("robo_burnie.scripts.around_the_league_thread._generate_post_body")
-@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games_cdn")
+@patch("robo_burnie.scripts.around_the_league_thread._helpers.get_todays_games")
 @patch("robo_burnie.scripts.around_the_league_thread.praw.Reddit")
 def test_main_update_action(
     mock_reddit_cls, mock_get_games_cdn, mock_gen_body, mock_update

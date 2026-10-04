@@ -69,9 +69,8 @@ Resets the runtime config file (`.config.json`) back to defaults from `default_c
 Central module for all NBA data. Key functions:
 
 - **Standings:** `get_todays_standings()`, `get_team_standings()` — via `nba_api`.
-- **Schedule:** `get_full_team_schedule()`, `get_game_from_cdn_endpoint()` — via NBA CDN.
-- **Today's games:** `get_todays_game_v3()`, `get_todays_games_cdn()` — checks if the Heat play today and fetches all games.
-- **Broadcasters:** `get_game_id_to_channels_map()` — TV/radio channel info.
+- **Schedule:** `get_full_team_schedule()` — via NBA CDN.
+- **Today's games:** `get_todays_game_v3()`, `get_todays_games()` — checks if the Heat play today and fetches all games (with live scores and TV) via `nba_api`, falling back to ESPN for Summer League.
 - **Box scores:** `get_boxscore()`, `get_boxscore_link()`, `get_espn_boxscore_link()`.
 - **Utilities:** `get_current_datetime()` (uses UTC-4 offset for Eastern time), `is_script_enabled()`.
 
@@ -93,8 +92,8 @@ Context manager (`file_lock`) using `fcntl.flock` to prevent overlapping runs of
 
 | Source | Used For |
 |--------|----------|
-| [nba_api](https://github.com/swar/nba_api) (Python package) | Standings, scoreboard, box scores |
-| NBA CDN (`cdn.nba.com`) | Schedule, today's games, broadcaster info |
+| [nba_api](https://github.com/swar/nba_api) (Python package) | Standings, schedule, today's games, broadcasters, box scores |
+| NBA CDN (`cdn.nba.com`) | Full-season schedule (schedule sidebar) |
 | ESPN API | Box score links |
 | Reddit API via [PRAW](https://praw.readthedocs.io/) | Thread creation, stickying, sidebar widgets, wiki edits |
 | Google Calendar API | Schedule sidebar sync |

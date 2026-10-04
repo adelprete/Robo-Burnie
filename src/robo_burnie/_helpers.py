@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from collections import defaultdict
 
 __all__ = [
     "get_todays_standings",
@@ -9,7 +8,6 @@ __all__ = [
     "get_boxscore",
     "get_full_team_schedule",
     "get_todays_date_str",
-    "get_todays_games_from_schedule",
     "get_todays_game_v2",
     "get_todays_game_v3",
     "get_todays_game_auto",
@@ -33,6 +31,7 @@ from nba_api.stats.endpoints import (
     leaguestandings,
     scheduleleaguev2,
     scoreboardv2,
+    scoreboardv3,
 )
 
 from robo_burnie._settings import TEAM
@@ -49,18 +48,6 @@ SCHEDULE_LEAGUE_V2_CDN_URL = (
     "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
 )
 HTTP_REQUEST_TIMEOUT = 60
-_STREAM_TITLE_TO_CHANNEL = (
-    ("nba tv", "NBA TV"),
-    ("espnu", "ESPNU"),
-    ("espn", "ESPN"),
-    ("tnt", "TNT"),
-    ("abc", "ABC"),
-    ("nbc", "NBC"),
-    ("peacock", "Peacock"),
-    ("telemundo", "Telemundo"),
-    ("amazon", "Amazon Prime Video"),
-    ("prime", "Amazon Prime Video"),
-)
 
 
 def is_amazon_prime_channel(label: str) -> bool:
@@ -85,6 +72,8 @@ def filter_tv_broadcasters(channels: list[str]) -> list[str]:
 def _broadcaster_label(broadcaster: dict) -> str:
     return (
         broadcaster.get("broadcasterDisplay")
+        # ScoreboardV3 spells it "broadcastDisplay"
+        or broadcaster.get("broadcastDisplay")
         or broadcaster.get("broadcasterAbbreviation")
         or ""
     ).strip()
@@ -100,7 +89,8 @@ def _collect_schedule_tv_broadcasters(
             national.append(label)
 
     for broadcaster in broadcasters.get("nationalBroadcasters", []):
-        if broadcaster.get("broadcasterMedia") != "tv":
+        # ScoreboardV3 omits broadcasterMedia (radio is listed separately there)
+        if broadcaster.get("broadcasterMedia", "tv") != "tv":
             continue
         label = _broadcaster_label(broadcaster)
         if label and label != "LeaguePass":
@@ -187,31 +177,15 @@ def get_todays_date_str(hours_offset=0, format: str = "%Y%m%d") -> str:
     return (datetime.now() - timedelta(hours=hours_offset)).strftime(format)
 
 
-def _channel_from_stream_title(title: str) -> str | None:
-    lowered = title.lower()
-    for keyword, channel in _STREAM_TITLE_TO_CHANNEL:
-        if keyword in lowered:
-            return channel
-    return None
-
-
-def _channels_cdn_url(league_id: str) -> str:
-    return f"https://cdn.nba.com/static/json/liveData/channels/v2/channels_{league_id}.json"
-
-
-def _scoreboard_cdn_url(league_id: str) -> str:
-    return f"https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_{league_id}.json"
-
-
-def _parse_scoreboard_game(game: dict, game_id_to_channels_map: dict) -> dict:
+def _parse_scoreboard_game(game: dict) -> dict:
+    # Scores are 0 before tip-off; blank them so the thread shows only the start time
+    pregame = game["gameStatus"] == 1
     return {
         "game_status_text": game["gameStatusText"],
         "game_status_id": game["gameStatus"],
         "live_period": game["period"],
-        "natl_tv_broadcaster_abbreviation": ", ".join(
-            filter_tv_broadcasters(
-                list(game_id_to_channels_map.get(game["gameId"], []))
-            )
+        "natl_tv_broadcaster_abbreviation": format_game_tv_broadcasters(
+            game.get("broadcasters", {})
         ),
         "home_team_id": game["homeTeam"]["teamId"],
         "visitor_team_id": game["awayTeam"]["teamId"],
@@ -221,56 +195,33 @@ def _parse_scoreboard_game(game: dict, game_id_to_channels_map: dict) -> dict:
         "visitor_abbreviation": game["awayTeam"]["teamTricode"],
         "home_city_name": game["homeTeam"]["teamCity"],
         "visitor_city_name": game["awayTeam"]["teamCity"],
-        "home_pts": game["homeTeam"].get("score"),
-        "visitor_pts": game["awayTeam"].get("score"),
+        "home_pts": None if pregame else game["homeTeam"].get("score"),
+        "visitor_pts": None if pregame else game["awayTeam"].get("score"),
     }
 
 
-def get_game_id_to_channels_map(
+def get_todays_games(
     league_ids: tuple[str, ...] = SCOREBOARD_LEAGUE_IDS,
 ) -> dict:
-    game_id_to_channels = defaultdict(set)
-    for league_id in league_ids:
-        response = requests.get(
-            _channels_cdn_url(league_id), timeout=HTTP_REQUEST_TIMEOUT
-        )
-        if response.status_code != 200:
-            continue
-        data = response.json()
-        for game in data.get("channels", {}).get("games", []):
-            for stream in game.get("streams", []):
-                title = stream.get("title")
-                if not title:
-                    continue
-                channel = _channel_from_stream_title(title)
-                if channel:
-                    game_id_to_channels[game["gameId"]].add(channel)
-    return game_id_to_channels
-
-
-def get_todays_games_cdn(
-    league_ids: tuple[str, ...] = SCOREBOARD_LEAGUE_IDS,
-) -> dict:
-    game_id_to_channels_map: dict = get_game_id_to_channels_map(league_ids)
+    # Same 3-hour offset as Around the League so post-midnight runs stay on today's slate
+    game_date = get_todays_date_str(hours_offset=3, format="%Y-%m-%d")
 
     games = {}
     espn_fallback_league_ids: list[str] = []
     for league_id in league_ids:
-        response = requests.get(
-            _scoreboard_cdn_url(league_id), timeout=HTTP_REQUEST_TIMEOUT
-        )
-        if response.status_code != 200:
-            if league_id in SUMMER_LEAGUE_ID_TO_ESPN_PATH:
-                espn_fallback_league_ids.append(league_id)
-            continue
-        data = response.json()
-        league_games = data.get("scoreboard", {}).get("games", [])
-        if league_id in SUMMER_LEAGUE_ID_TO_ESPN_PATH and not league_games:
+        is_summer_league = league_id in SUMMER_LEAGUE_ID_TO_ESPN_PATH
+        try:
+            league_games = scoreboardv3.ScoreboardV3(
+                game_date=game_date, league_id=league_id
+            ).get_dict()["scoreboard"]["games"]
+        except Exception:
+            if not is_summer_league:
+                raise
+            league_games = []
+        if is_summer_league and not league_games:
             espn_fallback_league_ids.append(league_id)
         for game in league_games:
-            games[game["gameId"]] = _parse_scoreboard_game(
-                game, game_id_to_channels_map
-            )
+            games[game["gameId"]] = _parse_scoreboard_game(game)
     if espn_fallback_league_ids:
         espn_paths = tuple(
             SUMMER_LEAGUE_ID_TO_ESPN_PATH[league_id]
@@ -383,37 +334,6 @@ def _get_todays_summer_league_games_espn(
         if parsed is not None:
             games[event["id"]] = parsed
 
-    return games
-
-
-def get_todays_games_from_schedule() -> dict:
-    """Get today's games from the season schedule CDN."""
-    games_data = _fetch_season_schedule_cdn()["leagueSchedule"]
-    todays_date = get_todays_date_str(format="%m/%d/%Y")
-
-    games = {}
-    for game_date in games_data["gameDates"]:
-        if todays_date in game_date["gameDate"]:
-            for game in game_date["games"]:
-                games[game["gameId"]] = {
-                    "game_status_text": game["gameStatusText"],
-                    "game_status_id": game["gameStatus"],
-                    "live_period": 0,
-                    "natl_tv_broadcaster_abbreviation": format_game_tv_broadcasters(
-                        game.get("broadcasters", {})
-                    ),
-                    "home_team_id": game["homeTeam"]["teamId"],
-                    "visitor_team_id": game["awayTeam"]["teamId"],
-                    "home_name": game["homeTeam"]["teamName"],
-                    "visitor_name": game["awayTeam"]["teamName"],
-                    "home_abbreviation": game["homeTeam"]["teamTricode"],
-                    "visitor_abbreviation": game["awayTeam"]["teamTricode"],
-                    "home_city_name": game["homeTeam"]["teamCity"],
-                    "visitor_city_name": game["awayTeam"]["teamCity"],
-                    "home_pts": None,
-                    "visitor_pts": None,
-                }
-            break
     return games
 
 

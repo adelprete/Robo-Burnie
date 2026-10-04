@@ -47,7 +47,7 @@ def _main(action: str) -> None:
     )
     subreddit = reddit.subreddit(SUBREDDIT)
 
-    todays_games = _helpers.get_todays_games_cdn()
+    todays_games = _helpers.get_todays_games()
     if _team_plays_today(todays_games, TEAM):
         logging.info(f"{TEAM} Game Today. Skipping Around the League Thread")
         _unsticky_old_around_the_league_thread(subreddit)
