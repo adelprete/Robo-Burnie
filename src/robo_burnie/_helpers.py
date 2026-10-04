@@ -8,7 +8,6 @@ __all__ = [
     "get_team_standings",
     "get_boxscore",
     "get_full_team_schedule",
-    "get_game_from_cdn_endpoint",
     "get_todays_date_str",
     "get_todays_games_from_schedule",
     "get_todays_game_v2",
@@ -177,17 +176,6 @@ def get_full_team_schedule(team_name: str) -> List[dict]:
                 teams_games.append(game)
 
     return teams_games
-
-
-def get_game_from_cdn_endpoint(game_id: str) -> dict:
-    schedule = _fetch_season_schedule_cdn()
-
-    for game_date in schedule["leagueSchedule"]["gameDates"]:
-        for game in game_date["games"]:
-            if game["gameId"] == game_id:
-                return game
-
-    return {}
 
 
 def get_current_datetime() -> datetime:

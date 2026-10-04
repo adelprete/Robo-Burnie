@@ -23,7 +23,7 @@ BOSTON_TEAM_ID = "1610612738"
 
 
 @pytest.fixture()
-def todays_game():
+def todays_game(cdn_game_data):
     return {
         "game_id": "0022400100",
         "game_label": "",
@@ -35,6 +35,9 @@ def todays_game():
         "away_team_id": int(BOSTON_TEAM_ID),
         "away_team_wins": 25,
         "away_team_losses": 5,
+        "home_tricode": "MIA",
+        "away_tricode": "BOS",
+        "broadcasters": cdn_game_data["broadcasters"],
     }
 
 
@@ -265,11 +268,7 @@ def test_build_standings_table_exception(mock_standings):
     "robo_burnie.scripts.game_thread._helpers.get_boxscore_link",
     return_value="https://espn.com/boxscore",
 )
-@patch("robo_burnie.scripts.game_thread._helpers.get_game_from_cdn_endpoint")
-def test_generate_post_details(
-    mock_cdn, mock_boxscore_link, mock_standings_table, todays_game, cdn_game_data
-):
-    mock_cdn.return_value = cdn_game_data
+def test_generate_post_details(mock_boxscore_link, mock_standings_table, todays_game):
 
     title, body = _generate_post_details(todays_game, "MIA")
 
@@ -290,12 +289,10 @@ def test_generate_post_details(
     "robo_burnie.scripts.game_thread._helpers.get_boxscore_link",
     return_value="https://espn.com/boxscore",
 )
-@patch("robo_burnie.scripts.game_thread._helpers.get_game_from_cdn_endpoint")
 def test_generate_post_details_with_game_label(
-    mock_cdn, mock_boxscore_link, mock_standings_table, todays_game, cdn_game_data
+    mock_boxscore_link, mock_standings_table, todays_game
 ):
     todays_game["game_label"] = "NBA Cup"
-    mock_cdn.return_value = cdn_game_data
 
     title, _ = _generate_post_details(todays_game, "MIA")
     assert "[NBA Cup]" in title
@@ -309,11 +306,9 @@ def test_generate_post_details_with_game_label(
     "robo_burnie.scripts.game_thread._helpers.get_boxscore_link",
     return_value="https://espn.com/boxscore",
 )
-@patch("robo_burnie.scripts.game_thread._helpers.get_game_from_cdn_endpoint")
 def test_generate_post_details_includes_standings(
-    mock_cdn, mock_boxscore_link, mock_standings_table, todays_game, cdn_game_data
+    mock_boxscore_link, mock_standings_table, todays_game
 ):
-    mock_cdn.return_value = cdn_game_data
 
     _, body = _generate_post_details(todays_game, "MIA")
     assert "| standings |" in body

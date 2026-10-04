@@ -44,15 +44,11 @@ def _main(action: str) -> None:
 
 
 def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
-
-    if _is_summer_league_game(todays_game):
-        game_data = {
-            "broadcasters": todays_game.get("broadcasters", {}),
-            "homeTeam": {"teamTricode": todays_game.get("home_tricode", "")},
-            "awayTeam": {"teamTricode": todays_game.get("away_tricode", "")},
-        }
-    else:
-        game_data = _helpers.get_game_from_cdn_endpoint(todays_game["game_id"])
+    game_data = {
+        "broadcasters": todays_game.get("broadcasters", {}),
+        "homeTeam": {"teamTricode": todays_game.get("home_tricode", "")},
+        "awayTeam": {"teamTricode": todays_game.get("away_tricode", "")},
+    }
 
     tv_channels = _get_tv_broadcasters(game_data, team)
     radio_channels = _get_radio_broadcasters(game_data, team)
