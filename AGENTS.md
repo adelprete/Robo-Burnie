@@ -52,7 +52,7 @@ Updates the Standings widget on New Reddit's sidebar with current Eastern Confer
 
 ### schedule_sidebar.py
 
-Fetches the Heat schedule from the NBA CDN, syncs it to a Google Calendar, then triggers Reddit's schedule widget to pull from that calendar. Requires Google OAuth credentials (`token.json`, `google_credentials.json`).
+Fetches the Heat schedule from the NBA CDN, syncs it to a Google Calendar, then triggers Reddit's schedule widget to pull from that calendar. Authenticates with a Google service account key (`roboburnie-calendar-*.json` in the repo root); the calendar must be shared with the service account email.
 
 ### update_old_reddit.py
 

@@ -19,7 +19,7 @@ Run **setup-pi.sh** as the user that will own the install (e.g. `pi`). It instal
 ./setup-pi.sh
 ```
 
-Copy your config and credentials to the Pi separately after setup: `.config.json`, `token.json`, Google service account JSON, and **private.py** (in `src/robo_burnie/`).
+Copy your config and credentials to the Pi separately after setup: `.config.json`, Google service account JSON, and **private.py** (in `src/robo_burnie/`).
 
 ## How to run scripts
 
