@@ -32,7 +32,7 @@ def _main() -> None:
     )
     subreddit = reddit.subreddit(SUBREDDIT)
 
-    game_thread = _find_game_thread(subreddit)
+    game_thread = _helpers.find_game_thread(subreddit)
     if game_thread is None:
         logging.info("No game thread found")
         return
@@ -47,15 +47,6 @@ def _main() -> None:
         logging.info(f"Post game thread {state} by u/{comment.author.name}")
 
     _set_last_checked_utc(time.time())
-
-
-def _find_game_thread(
-    subreddit: praw.models.Subreddit,
-) -> praw.models.Submission | None:
-    for post in subreddit.hot(limit=15):
-        if post.stickied and "[Game Thread]" in post.title:
-            return post
-    return None
 
 
 def _collect_new_commands(

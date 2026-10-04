@@ -23,6 +23,9 @@ PATH=/usr/bin:/bin
 30 9 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/game_thread.py create >> $LOG_DIR/game_thread.log 2>&1
 0 10 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/game_thread.py create >> $LOG_DIR/game_thread.log 2>&1
 
+# Game thread: keep the live score current (every 3 min, 1 PM–2:59 AM)
+*/3 0-2,13-23 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/game_thread.py update >> $LOG_DIR/game_thread_update.log 2>&1
+
 # Schedule sidebar: update calendar and sidebar widget
 5 9 * * * cd $PROJECT_DIR && $VENV/bin/python src/robo_burnie/scripts/schedule_sidebar.py >> $LOG_DIR/schedule_sidebar.log 2>&1
 

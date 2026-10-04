@@ -10,7 +10,6 @@ from robo_burnie.scripts.around_the_league_thread import (
     _create_around_the_league_thread,
     _generate_post_body,
     _main,
-    _team_plays_today,
     _unsticky_old_around_the_league_thread,
     _update_around_the_league_thread,
 )
@@ -40,20 +39,6 @@ def todays_games():
             "natl_tv_broadcaster_abbreviation": None,
         },
     }
-
-
-# ---------------------------------------------------------------------------
-# _team_plays_today
-# ---------------------------------------------------------------------------
-
-
-def test_team_plays_today():
-    games = {
-        "001": {"home_abbreviation": TEAM, "visitor_abbreviation": "BOS"},
-        "002": {"home_abbreviation": "LAL", "visitor_abbreviation": "BOS"},
-    }
-    assert _team_plays_today(games, TEAM) is True
-    assert _team_plays_today({"002": games["002"]}, TEAM) is False
 
 
 # ---------------------------------------------------------------------------

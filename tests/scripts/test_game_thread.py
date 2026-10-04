@@ -12,6 +12,8 @@ from robo_burnie.scripts.game_thread import (
     _main,
     _ordinal,
     _submit_post,
+    _update_score,
+    _with_score_row,
 )
 
 # ---------------------------------------------------------------------------
@@ -466,3 +468,109 @@ def test_main_game_already_started(
 
     mock_gen_details.assert_not_called()
     mock_submit.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Live score updates
+# ---------------------------------------------------------------------------
+
+LIVE_GAME = {
+    "home_abbreviation": "MIA",
+    "visitor_abbreviation": "NOP",
+    "home_pts": 54,
+    "visitor_pts": 50,
+    "game_status_text": "Q3 5:42 ",
+}
+GAME_BODY = (
+    "| Game Details | . |\n"
+    "|--|--|\n"
+    "| **Tip-Off Time** | 7:30 pm ET |\n"
+    "| **TV Broadcasts** | NBC & Peacock |"
+)
+
+
+def test_with_score_row_inserts_then_replaces():
+    body = _with_score_row(GAME_BODY, LIVE_GAME)
+    assert "|--|--|\n| **Score** | **NOP 50 - MIA 54** (Q3 5:42) |\n| **Tip-Off" in body
+
+    final_game = {**LIVE_GAME, "home_pts": 101, "game_status_text": "Final"}
+    final = _with_score_row(body, final_game)
+    assert final.count("**Score**") == 1
+    assert "| **Score** | **NOP 50 - MIA 101** (Final) |" in final
+    assert _with_score_row(final, final_game) == final
+
+
+NOW = 1_000_000
+
+
+def _game_thread_post(selftext: str, created_utc: float = NOW - 3600) -> MagicMock:
+    return MagicMock(
+        title="[Game Thread] New Orleans Pelicans @ Miami Heat",
+        selftext=selftext.replace("&", "&amp;"),
+        created_utc=created_utc,
+    )
+
+
+@pytest.fixture()
+def bot_posts():
+    """Patch the bot's recent submissions; returns the list to fill."""
+    posts = []
+    with patch("robo_burnie.scripts.game_thread._get_reddit") as mock_reddit, patch(
+        "robo_burnie.scripts.game_thread.time.time", return_value=NOW
+    ):
+        mock_reddit.return_value.user.me.return_value.submissions.new.return_value = (
+            posts
+        )
+        yield posts
+
+
+@patch("robo_burnie.scripts.game_thread._helpers.get_todays_games")
+def test_update_score_edits_unstickied_thread(mock_games, bot_posts):
+    mock_games.return_value = {"1": LIVE_GAME}
+    post = _game_thread_post(GAME_BODY)
+    post.stickied = False  # post game thread already unstickied it
+    bot_posts.append(post)
+
+    _update_score()
+
+    mock_games.assert_called_once_with(("00",))
+    edited = post.edit.call_args[0][0]
+    assert "**NOP 50 - MIA 54** (Q3 5:42)" in edited
+    assert "NBC & Peacock" in edited
+
+
+@patch("robo_burnie.scripts.game_thread._helpers.get_todays_games")
+def test_update_score_ignores_yesterdays_thread(mock_games, bot_posts):
+    post = _game_thread_post(GAME_BODY, created_utc=NOW - 25 * 3600)
+    bot_posts.append(post)
+
+    _update_score()
+
+    mock_games.assert_not_called()
+    post.edit.assert_not_called()
+
+
+@pytest.mark.parametrize("final_status", ["Final", "Final/OT", "Final/2OT"])
+@patch("robo_burnie.scripts.game_thread._helpers.get_todays_games")
+def test_update_score_skips_nba_once_final(mock_games, bot_posts, final_status):
+    final_body = _with_score_row(
+        GAME_BODY, {**LIVE_GAME, "game_status_text": final_status}
+    )
+    post = _game_thread_post(final_body)
+    bot_posts.append(post)
+
+    _update_score()
+
+    mock_games.assert_not_called()
+    post.edit.assert_not_called()
+
+
+@patch("robo_burnie.scripts.game_thread._helpers.get_todays_games")
+def test_update_score_skips_before_tip_off(mock_games, bot_posts):
+    mock_games.return_value = {"1": {**LIVE_GAME, "home_pts": None}}
+    post = _game_thread_post(GAME_BODY)
+    bot_posts.append(post)
+
+    _update_score()
+
+    post.edit.assert_not_called()

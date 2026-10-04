@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import html
 import logging
+import re
 import sys
+import time
 from datetime import datetime, timezone
 from typing import Tuple
 
@@ -19,8 +22,15 @@ logging.basicConfig(
     datefmt="%d-%b-%y %H:%M:%S",
 )
 
+TIP_OFF_ROW = "| **Tip-Off Time** |"
+SCORE_ROW_RE = re.compile(r"^\| \*\*Score\*\* \|.*\n", re.MULTILINE)
+
 
 def _main(action: str) -> None:
+    if action == "update":
+        _update_score()
+        return
+
     todays_game = _helpers.get_todays_game_auto(team=TEAM)
 
     if todays_game == {}:
@@ -30,17 +40,72 @@ def _main(action: str) -> None:
 
         title, self_text = _generate_post_details(todays_game, TEAM)
 
-        reddit = praw.Reddit(
-            client_id=CLIENT_ID,
-            client_secret=CLIENT_SECRET_KEY,
-            password=BOT_PASSWORD,
-            user_agent="Game Bot for r/heat",
-            username="RoboBurnie",
-        )
-        subreddit = reddit.subreddit(SUBREDDIT)
-
         if action == "create":
-            _submit_post(subreddit, title, self_text)
+            _submit_post(_get_reddit().subreddit(SUBREDDIT), title, self_text)
+
+
+def _get_reddit() -> praw.Reddit:
+    return praw.Reddit(
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET_KEY,
+        password=BOT_PASSWORD,
+        user_agent="Game Bot for r/heat",
+        username="RoboBurnie",
+    )
+
+
+def _update_score() -> None:
+    """Keeps a live Score row in today's game thread, above the tip-off time"""
+    # The bot's own posts, not stickies: the post game thread may already have
+    # unstickied it. Within the last day so yesterday's thread is never edited.
+    post = next(
+        (
+            post
+            for post in _get_reddit().user.me().submissions.new(limit=10)
+            if "[Game Thread]" in post.title
+            and time.time() - post.created_utc < 24 * 60 * 60
+        ),
+        None,
+    )
+    if post is None:
+        logging.info("No game thread to update")
+        return
+
+    # Reddit returns selftext HTML-escaped (&amp;); unescape so edits don't double it
+    body = html.unescape(post.selftext)
+    score_row = SCORE_ROW_RE.search(body)
+    # "(Final", not "(Final)": overtime games end as Final/OT, Final/2OT, ...
+    if score_row and "(Final" in score_row.group():
+        logging.info("Game already final")
+        return
+
+    league_ids = (
+        _helpers.SUMMER_LEAGUE_IDS if "[Summer League]" in post.title else ("00",)
+    )
+    game = _helpers.find_team_game(_helpers.get_todays_games(league_ids), TEAM)
+    if game is None or game["home_pts"] is None:
+        logging.info("No live game to update")
+        return
+
+    new_body = _with_score_row(body, game)
+    if new_body == body:
+        logging.info("Score unchanged")
+        return
+
+    post.edit(new_body)
+    logging.info("Game thread score updated")
+
+
+def _with_score_row(body: str, game: dict) -> str:
+    score_row = "| **Score** | **{} {} - {} {}** ({}) |\n".format(
+        game["visitor_abbreviation"],
+        game["visitor_pts"],
+        game["home_abbreviation"],
+        game["home_pts"],
+        _helpers.format_game_status(game["game_status_text"]),
+    )
+    body = SCORE_ROW_RE.sub("", body)
+    return body.replace(TIP_OFF_ROW, score_row + TIP_OFF_ROW, 1)
 
 
 def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
@@ -95,7 +160,7 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
     table = (
         "| Game Details | . |\n"
         "|--|--|\n"
-        "| **Tip-Off Time** | {} |\n"
+        f"{TIP_OFF_ROW} {{}} |\n"
         "| **TV Broadcasts** | {} |\n"
         "| **Radio Broadcasts** | {} |\n"
         "| **Game Info & Stats** | [Box Score]({}) |"
@@ -196,13 +261,7 @@ def _ordinal(n: int) -> str:
 
 
 def _submit_post(subreddit: str, title: str, self_text: str) -> None:
-    game_thread_exists = False
-    for post in subreddit.hot(limit=10):
-        if post.stickied and "[Game Thread]" in post.title:
-            game_thread_exists = True
-            break
-
-    if game_thread_exists is False:
+    if _helpers.find_game_thread(subreddit) is None:
         # Unsticky Post Game Thread (if any)
         for post in subreddit.hot(limit=5):
             if post.stickied and "[Post Game]" in post.title:

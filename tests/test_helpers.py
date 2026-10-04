@@ -7,6 +7,8 @@ import pytest
 from robo_burnie._helpers import (
     HTTP_REQUEST_TIMEOUT,
     filter_tv_broadcasters,
+    find_game_thread,
+    find_team_game,
     format_game_tv_broadcasters,
     get_boxscore_link,
     get_espn_boxscore_link,
@@ -609,3 +611,45 @@ def test_get_full_team_schedule_filters_to_team(mock_schedule):
 
     assert get_full_team_schedule("heat") == [heat_home, heat_away]
     mock_schedule.assert_called_once_with(league_id="00")
+
+
+# ---------------------------------------------------------------------------
+# find_game_thread / find_team_game
+# ---------------------------------------------------------------------------
+
+
+def test_find_game_thread_found():
+    subreddit = MagicMock()
+    game_post = MagicMock(stickied=True, title="[Game Thread] MIA vs BOS")
+    other_post = MagicMock(stickied=True, title="Daily Discussion")
+    subreddit.hot.return_value = [other_post, game_post]
+
+    result = find_game_thread(subreddit)
+    assert result is game_post
+
+
+def test_find_game_thread_not_found():
+    subreddit = MagicMock()
+    other_post = MagicMock(stickied=True, title="Daily Discussion")
+    subreddit.hot.return_value = [other_post]
+
+    result = find_game_thread(subreddit)
+    assert result is None
+
+
+def test_find_game_thread_not_stickied():
+    subreddit = MagicMock()
+    unstickied = MagicMock(stickied=False, title="[Game Thread] MIA vs BOS")
+    subreddit.hot.return_value = [unstickied]
+
+    result = find_game_thread(subreddit)
+    assert result is None
+
+
+def test_find_team_game():
+    games = {
+        "001": {"home_abbreviation": "LAL", "visitor_abbreviation": "BOS"},
+        "002": {"home_abbreviation": "BOS", "visitor_abbreviation": "MIA"},
+    }
+    assert find_team_game(games, "MIA") is games["002"]
+    assert find_team_game({"001": games["001"]}, "MIA") is None

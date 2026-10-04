@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 __all__ = [
     "get_todays_standings",
@@ -11,6 +12,9 @@ __all__ = [
     "get_todays_game_v2",
     "get_todays_game_v3",
     "get_todays_game_auto",
+    "find_team_game",
+    "find_game_thread",
+    "format_game_status",
     "get_boxscore_link",
     "gameclock_to_seconds",
     "get_espn_boxscore_link",
@@ -168,6 +172,34 @@ def get_current_datetime() -> datetime:
 
 def get_todays_date_str(hours_offset=0, format: str = "%Y%m%d") -> str:
     return (datetime.now() - timedelta(hours=hours_offset)).strftime(format)
+
+
+def find_team_game(todays_games: dict, team: str = TEAM) -> dict | None:
+    """Return the team's game from a get_todays_games() result, if any."""
+    return next(
+        (
+            game
+            for game in todays_games.values()
+            if team in (game["home_abbreviation"], game["visitor_abbreviation"])
+        ),
+        None,
+    )
+
+
+# ESPN shortDetail prefixes scheduled games with the date (e.g. "7/4 - 3:00 PM EDT").
+_ESPN_DATE_PREFIX_RE = re.compile(r"^\d{1,2}/\d{1,2}\s*-\s*")
+
+
+def format_game_status(status_text: str) -> str:
+    return _ESPN_DATE_PREFIX_RE.sub("", status_text.strip()).strip()
+
+
+def find_game_thread(subreddit):
+    """Return the stickied [Game Thread] post, if any."""
+    for post in subreddit.hot(limit=15):
+        if post.stickied and "[Game Thread]" in post.title:
+            return post
+    return None
 
 
 def _parse_scoreboard_game(game: dict) -> dict:

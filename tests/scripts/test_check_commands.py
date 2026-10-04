@@ -5,44 +5,10 @@ from unittest.mock import MagicMock, patch
 
 from robo_burnie.scripts.check_commands import (
     _collect_new_commands,
-    _find_game_thread,
     _get_last_checked_utc,
     _main,
     _set_last_checked_utc,
 )
-
-# ---------------------------------------------------------------------------
-# _find_game_thread
-# ---------------------------------------------------------------------------
-
-
-def test_find_game_thread_found():
-    subreddit = MagicMock()
-    game_post = MagicMock(stickied=True, title="[Game Thread] MIA vs BOS")
-    other_post = MagicMock(stickied=True, title="Daily Discussion")
-    subreddit.hot.return_value = [other_post, game_post]
-
-    result = _find_game_thread(subreddit)
-    assert result is game_post
-
-
-def test_find_game_thread_not_found():
-    subreddit = MagicMock()
-    other_post = MagicMock(stickied=True, title="Daily Discussion")
-    subreddit.hot.return_value = [other_post]
-
-    result = _find_game_thread(subreddit)
-    assert result is None
-
-
-def test_find_game_thread_not_stickied():
-    subreddit = MagicMock()
-    unstickied = MagicMock(stickied=False, title="[Game Thread] MIA vs BOS")
-    subreddit.hot.return_value = [unstickied]
-
-    result = _find_game_thread(subreddit)
-    assert result is None
-
 
 # ---------------------------------------------------------------------------
 # _collect_new_commands
@@ -242,7 +208,7 @@ def test_set_last_checked_utc_creates_from_default(tmp_path):
 @patch("robo_burnie.scripts.check_commands._set_last_checked_utc")
 @patch("robo_burnie.scripts.check_commands._collect_new_commands")
 @patch("robo_burnie.scripts.check_commands._get_last_checked_utc", return_value=0)
-@patch("robo_burnie.scripts.check_commands._find_game_thread")
+@patch("robo_burnie.scripts.check_commands._helpers.find_game_thread")
 @patch("robo_burnie.scripts.check_commands.praw.Reddit")
 def test_main_no_game_thread(
     mock_reddit_cls, mock_find, mock_last_checked, mock_collect, mock_set
@@ -260,7 +226,7 @@ def test_main_no_game_thread(
 @patch("robo_burnie.scripts.check_commands._set_last_checked_utc")
 @patch("robo_burnie.scripts.check_commands._collect_new_commands")
 @patch("robo_burnie.scripts.check_commands._get_last_checked_utc", return_value=0)
-@patch("robo_burnie.scripts.check_commands._find_game_thread")
+@patch("robo_burnie.scripts.check_commands._helpers.find_game_thread")
 @patch("robo_burnie.scripts.check_commands.praw.Reddit")
 def test_main_with_commands(
     mock_reddit_cls, mock_find, mock_last_checked, mock_collect, mock_set
@@ -286,7 +252,7 @@ def test_main_with_commands(
 @patch("robo_burnie.scripts.check_commands._set_last_checked_utc")
 @patch("robo_burnie.scripts.check_commands._collect_new_commands", return_value=[])
 @patch("robo_burnie.scripts.check_commands._get_last_checked_utc", return_value=0)
-@patch("robo_burnie.scripts.check_commands._find_game_thread")
+@patch("robo_burnie.scripts.check_commands._helpers.find_game_thread")
 @patch("robo_burnie.scripts.check_commands.praw.Reddit")
 def test_main_no_commands(
     mock_reddit_cls, mock_find, mock_last_checked, mock_collect, mock_set

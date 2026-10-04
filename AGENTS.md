@@ -32,8 +32,8 @@ Every script in `scripts/` is a self-contained entry point. They all share the h
 
 Creates a stickied game-day discussion thread when the Heat play. Includes opponent, records, TV/radio info, standings context, and a box score link. Unstickies any existing post-game thread to make room.
 
-- Invoked with: `poetry run python src/robo_burnie/scripts/game_thread.py create`
-- Runs once daily (morning, before games start).
+- `create`: posts the thread (runs in the morning, before games start).
+- `update`: keeps a live **Score** row above the tip-off time (runs every 3 minutes during game hours). Edits only that row, and only when the score changes.
 
 ### post_game_thread.py
 
@@ -120,6 +120,7 @@ In production, cron jobs handle scheduling. See `crontab.example` for the full s
 4. **9:15 AM** — Update Old Reddit sidebar.
 5. **11:00 AM** — Create Around the League thread (if no Heat game).
 6. **Every 10 min (1 PM–midnight)** — Update Around the League scores.
+7. **Every 3 min (1 PM–3 AM)** — Update the game thread's live score.
 
 ## Development
 
