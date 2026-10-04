@@ -44,9 +44,6 @@ ESPN_SUMMER_LEAGUE_PATHS = (
     "nba-summer-utah",
 )
 SUMMER_LEAGUE_ID_TO_ESPN_PATH = dict(zip(SUMMER_LEAGUE_IDS, ESPN_SUMMER_LEAGUE_PATHS))
-SCHEDULE_LEAGUE_V2_CDN_URL = (
-    "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
-)
 HTTP_REQUEST_TIMEOUT = 60
 
 
@@ -150,9 +147,7 @@ def get_boxscore(game_id: str) -> dict:
 
 
 def get_full_team_schedule(team_name: str) -> List[dict]:
-    schedule = requests.get(
-        SCHEDULE_LEAGUE_V2_CDN_URL, timeout=HTTP_REQUEST_TIMEOUT
-    ).json()
+    schedule = scheduleleaguev2.ScheduleLeagueV2(league_id="00").get_dict()
 
     teams_games = []
     for game_date in schedule["leagueSchedule"]["gameDates"]:

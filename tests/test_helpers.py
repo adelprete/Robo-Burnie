@@ -11,6 +11,7 @@ from robo_burnie._helpers import (
     get_boxscore_link,
     get_espn_boxscore_link,
     get_espn_summer_league_boxscore_link,
+    get_full_team_schedule,
     get_todays_game_auto,
     get_todays_game_v3,
     get_todays_games,
@@ -593,3 +594,18 @@ def test_get_espn_boxscore_link(
             timeout=HTTP_REQUEST_TIMEOUT,
         )
         assert result == expected_link
+
+
+@patch("robo_burnie._helpers.scheduleleaguev2.ScheduleLeagueV2")
+def test_get_full_team_schedule_filters_to_team(mock_schedule):
+    heat_home = {"homeTeam": {"teamSlug": "heat"}, "awayTeam": {"teamSlug": "magic"}}
+    heat_away = {"homeTeam": {"teamSlug": "knicks"}, "awayTeam": {"teamSlug": "heat"}}
+    other = {"homeTeam": {"teamSlug": "bulls"}, "awayTeam": {"teamSlug": "nets"}}
+    mock_schedule.return_value.get_dict.return_value = {
+        "leagueSchedule": {
+            "gameDates": [{"games": [heat_home, other]}, {"games": [heat_away]}]
+        }
+    }
+
+    assert get_full_team_schedule("heat") == [heat_home, heat_away]
+    mock_schedule.assert_called_once_with(league_id="00")

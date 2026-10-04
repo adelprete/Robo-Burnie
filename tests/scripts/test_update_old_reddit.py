@@ -79,18 +79,19 @@ def sample_schedule_games():
         games.append(
             {
                 "gameDateEst": f"{game_date.strftime('%Y-%m-%d')}T19:00:00",
+                "gameStatus": 3 if i < 6 else 1,
                 "gameStatusText": "7:00 PM ET",
                 "homeTeam": {
                     "teamSlug": "heat" if i % 2 == 0 else "celtics",
                     "teamId": int(MIAMI_ID) if i % 2 == 0 else int(BOSTON_ID),
                     "teamTricode": "MIA" if i % 2 == 0 else "BOS",
-                    "score": 110 if i < 6 else None,
+                    "score": 110 if i < 6 else 0,
                 },
                 "awayTeam": {
                     "teamSlug": "celtics" if i % 2 == 0 else "heat",
                     "teamId": int(BOSTON_ID) if i % 2 == 0 else int(MIAMI_ID),
                     "teamTricode": "BOS" if i % 2 == 0 else "MIA",
-                    "score": 100 if i < 6 else None,
+                    "score": 100 if i < 6 else 0,
                 },
             }
         )
@@ -104,6 +105,7 @@ def sample_schedule_games():
 
 def test_get_opponent_display_str_home():
     game = {
+        "gameStatus": 3,
         "homeTeam": {"teamSlug": "heat", "teamId": int(MIAMI_ID)},
         "awayTeam": {
             "teamSlug": "celtics",
@@ -136,14 +138,16 @@ def test_get_opponent_display_str_away():
 
 def test_get_score_display_str_no_score():
     game = {
-        "homeTeam": {"teamSlug": "heat", "score": None},
-        "awayTeam": {"teamSlug": "celtics", "score": None},
+        "gameStatus": 1,
+        "homeTeam": {"teamSlug": "heat", "score": 0},
+        "awayTeam": {"teamSlug": "celtics", "score": 0},
     }
     assert _get_score_display_str(game, "heat") == ""
 
 
 def test_get_score_display_str_home_win():
     game = {
+        "gameStatus": 3,
         "homeTeam": {"teamSlug": "heat", "score": 110},
         "awayTeam": {"teamSlug": "celtics", "score": 100},
     }
@@ -154,6 +158,7 @@ def test_get_score_display_str_home_win():
 
 def test_get_score_display_str_home_loss():
     game = {
+        "gameStatus": 3,
         "homeTeam": {"teamSlug": "heat", "score": 95},
         "awayTeam": {"teamSlug": "celtics", "score": 105},
     }
@@ -164,6 +169,7 @@ def test_get_score_display_str_home_loss():
 
 def test_get_score_display_str_away_win():
     game = {
+        "gameStatus": 3,
         "homeTeam": {"teamSlug": "celtics", "score": 95},
         "awayTeam": {"teamSlug": "heat", "score": 105},
     }

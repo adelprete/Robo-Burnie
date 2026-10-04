@@ -174,7 +174,7 @@ def _get_score_display_str(game: dict, team: str) -> str:
     home_score = game["homeTeam"]["score"]
 
     score = ""
-    if home_score is not None:
+    if game["gameStatus"] != 1:
         score = f"{away_score} - {home_score}"
         if (game["homeTeam"]["teamSlug"] == team and home_score > away_score) or (
             game["awayTeam"]["teamSlug"] == team and home_score < away_score
