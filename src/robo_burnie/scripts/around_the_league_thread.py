@@ -89,7 +89,7 @@ def _unsticky_old_around_the_league_thread(subreddit: praw.models.Subreddit) -> 
                 "%Y%m%d"
             )
             if post_date != TODAYS_DATE_STR:
-                post.mod.sticky(False)
+                post.mod.sticky(state=False)
 
 
 def _create_around_the_league_thread(

@@ -154,7 +154,7 @@ def test_unsticky_old_thread():
     subreddit.hot.return_value = [old_post]
 
     _unsticky_old_around_the_league_thread(subreddit)
-    old_post.mod.sticky.assert_called_once_with(False)
+    old_post.mod.sticky.assert_called_once_with(state=False)
 
 
 @patch("robo_burnie.scripts.around_the_league_thread.TODAYS_DATE_STR", "20250120")

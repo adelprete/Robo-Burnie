@@ -386,7 +386,7 @@ def test_submit_post_creates_thread_when_none_exists():
 
     mock_subreddit.submit.assert_called_once()
     mock_submission.mod.sticky.assert_called_once()
-    mock_submission.mod.suggested_sort.assert_called_once_with("new")
+    mock_submission.mod.suggested_sort.assert_called_once_with(sort="new")
 
 
 def test_submit_post_skips_when_game_thread_exists():
@@ -410,7 +410,7 @@ def test_submit_post_unstickies_post_game_thread():
 
     _submit_post(mock_subreddit, "Test Title", "Test Body")
 
-    post_game.mod.sticky.assert_called_with(False)
+    post_game.mod.sticky.assert_called_with(state=False)
 
 
 # ---------------------------------------------------------------------------

@@ -359,7 +359,7 @@ def _unsticky_old_post_game_thread(reddit: praw.Reddit) -> None:
     subreddit = reddit.subreddit(SUBREDDIT)
     for post in subreddit.hot(limit=5):
         if post.stickied and "[Post Game]" in post.title:
-            post.mod.sticky(False)
+            post.mod.sticky(state=False)
             logger.info("Unstickied old Post Game Thread")
             break
 
@@ -367,7 +367,7 @@ def _unsticky_old_post_game_thread(reddit: praw.Reddit) -> None:
 def _unsticky_game_thread(reddit: praw.Reddit) -> None:
     game_thread = _helpers.find_game_thread(reddit.subreddit(SUBREDDIT))
     if game_thread:
-        game_thread.mod.sticky(False)
+        game_thread.mod.sticky(state=False)
 
 
 if __name__ == "__main__":

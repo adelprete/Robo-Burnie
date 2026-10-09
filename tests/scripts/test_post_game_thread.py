@@ -475,7 +475,7 @@ def test_unsticky_old_post_game_thread():
     mock_reddit.subreddit.return_value.hot.return_value = [stickied_post]
 
     _unsticky_old_post_game_thread(mock_reddit)
-    stickied_post.mod.sticky.assert_called_once_with(False)
+    stickied_post.mod.sticky.assert_called_once_with(state=False)
 
 
 def test_unsticky_old_post_game_thread_none_found():
@@ -493,7 +493,7 @@ def test_unsticky_game_thread():
     mock_reddit.subreddit.return_value.hot.return_value = [game_post]
 
     _unsticky_game_thread(mock_reddit)
-    game_post.mod.sticky.assert_called_once_with(False)
+    game_post.mod.sticky.assert_called_once_with(state=False)
 
 
 # ---------------------------------------------------------------------------

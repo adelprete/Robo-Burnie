@@ -264,7 +264,7 @@ def _submit_post(subreddit: str, title: str, self_text: str) -> None:
         # Unsticky Post Game Thread (if any)
         for post in subreddit.hot(limit=5):
             if post.stickied and "[Post Game]" in post.title:
-                post.mod.sticky(False)
+                post.mod.sticky(state=False)
                 break
 
         submission = subreddit.submit(
@@ -274,12 +274,12 @@ def _submit_post(subreddit: str, title: str, self_text: str) -> None:
             flair_id=get_flair_id("game_thread"),
         )
         submission.mod.sticky()
-        submission.mod.suggested_sort("new")
+        submission.mod.suggested_sort(sort="new")
 
         # Unsticky Post Game Thread (if any)
         for post in subreddit.hot(limit=5):
             if post.stickied and "[Post Game]" in post.title:
-                post.mod.sticky(False)
+                post.mod.sticky(state=False)
                 break
 
         logging.info("Game thread posted")
