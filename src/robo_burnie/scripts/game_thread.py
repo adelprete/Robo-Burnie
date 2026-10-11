@@ -236,7 +236,7 @@ def _build_standings_table(
             return ""
 
         rows = [
-            f"| | **{away_tricode}** | **{home_tricode}** |",
+            f"| . | **{away_tricode}** | **{home_tricode}** |",
             "|--|--|--|",
             f"| **Seed** | {_ordinal(away['PlayoffRank'])} {away['Conference']} | {_ordinal(home['PlayoffRank'])} {home['Conference']} |",
             f"| **Streak** | {away['strCurrentStreak']} | {home['strCurrentStreak']} |",

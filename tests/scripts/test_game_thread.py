@@ -223,6 +223,9 @@ def test_build_standings_table(mock_standings, mock_team_standings, standings_en
     assert "**MIA**" in result
     assert "4th East" in result
     assert "W 3" in result
+    # Reddit rejects empty header cells with META_RTJSON_MALFORMED
+    header_cells = result.splitlines()[0].strip("|").split("|")
+    assert all(cell.strip() for cell in header_cells)
 
 
 @patch("robo_burnie.scripts.game_thread._helpers.get_team_standings")
