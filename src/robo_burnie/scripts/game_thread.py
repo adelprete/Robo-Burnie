@@ -23,6 +23,7 @@ logging.basicConfig(
 
 TIP_OFF_ROW = "| **Tip-Off Time** |"
 SCORE_ROW_RE = re.compile(r"^\| \*\*Score\*\* \|.*\n", re.MULTILINE)
+LOCAL_STREAM_URL = "https://local10plusplatinum.maz.tv/apps/877/3776211-3882966/44d4cc7fbb9f4bd72cf272489b39eadf-3742525-3848761"
 
 
 def _main(action: str) -> None:
@@ -161,6 +162,7 @@ def _generate_post_details(todays_game: dict, team: str) -> Tuple[str, str]:
         "|--|--|\n"
         f"{TIP_OFF_ROW} {{}} |\n"
         "| **TV Broadcasts** | {} |\n"
+        f"| **Local Stream** | [Local 10]({LOCAL_STREAM_URL}) |\n"
         "| **Radio Broadcasts** | {} |\n"
         "| **Game Info & Stats** | [Box Score]({}) |"
     )
