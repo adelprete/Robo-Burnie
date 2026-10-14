@@ -83,9 +83,8 @@ def _broadcaster_label(broadcaster: dict) -> str:
     ).strip()
 
 
-def _collect_schedule_tv_broadcasters(
-    broadcasters: dict,
-) -> tuple[list[str], list[str]]:
+def format_game_tv_broadcasters(broadcasters: dict) -> str:
+    """Build a national TV display string, hiding Amazon unless it's the only broadcaster."""
     national: list[str] = []
     for broadcaster in broadcasters.get("nationalTvBroadcasters", []):
         label = _broadcaster_label(broadcaster)
@@ -100,30 +99,7 @@ def _collect_schedule_tv_broadcasters(
         if label and label != "LeaguePass":
             national.append(label)
 
-    regional: list[str] = []
-    for key in ("homeTvBroadcasters", "awayTvBroadcasters"):
-        for broadcaster in broadcasters.get(key, []):
-            label = _broadcaster_label(broadcaster)
-            if label:
-                regional.append(label)
-
-    return national, regional
-
-
-def format_game_tv_broadcasters(broadcasters: dict) -> str:
-    """Build a TV display string, hiding Amazon unless it's the only broadcaster."""
-    national, regional = _collect_schedule_tv_broadcasters(broadcasters)
-    filtered = filter_tv_broadcasters(national + regional)
-
-    national_kept = [channel for channel in national if channel in filtered]
-    if national_kept:
-        return ", ".join(national_kept)
-
-    regional_kept = [channel for channel in regional if channel in filtered]
-    if regional_kept:
-        return ", ".join(regional_kept)
-
-    return ", ".join(filtered)
+    return ", ".join(filter_tv_broadcasters(national))
 
 
 def get_todays_standings():

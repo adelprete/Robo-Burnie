@@ -355,14 +355,21 @@ def test_format_game_tv_broadcasters_omits_amazon_with_national_linear():
     assert format_game_tv_broadcasters(broadcasters) == "ESPN"
 
 
-def test_format_game_tv_broadcasters_shows_regional_when_national_is_amazon_only():
+def test_format_game_tv_broadcasters_ignores_local_channels():
     broadcasters = {
         "nationalBroadcasters": [
             {"broadcasterMedia": "tv", "broadcasterDisplay": "Amazon Prime Video"},
         ],
         "homeTvBroadcasters": [{"broadcasterAbbreviation": "BSSUN"}],
+        "awayTvBroadcasters": [{"broadcasterAbbreviation": "MSG"}],
     }
-    assert format_game_tv_broadcasters(broadcasters) == "BSSUN"
+    assert format_game_tv_broadcasters(broadcasters) == "Amazon Prime Video"
+    assert (
+        format_game_tv_broadcasters(
+            {"homeTvBroadcasters": [{"broadcasterAbbreviation": "BSSUN"}]}
+        )
+        == ""
+    )
 
 
 def test_format_game_tv_broadcasters_keeps_amazon_when_only_option():
